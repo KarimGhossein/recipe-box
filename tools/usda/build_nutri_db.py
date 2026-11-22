@@ -34,7 +34,7 @@ MAP = {
  'mozzarella cheese': ('01029', P(cup=113)), 'parmesan cheese': ('01032', {}),
  'cream cheese': ('01017', {}), 'greek yogurt': ('01256', {}), 'sour cream': ('01056', {}),
  'all-purpose flour': ('20081', P(cup=125, tbsp=8, tsp=2.6)), 'whole wheat flour': ('20080', {}),
- 'white rice': ('20044', P(cup=185, tbsp=12, tsp=4)), 'brown rice': ('20036', P(cup=185, tbsp=12, tsp=4)),
+ 'white rice': ('20444', P(cup=185, tbsp=12, tsp=4)), 'brown rice': ('20036', P(cup=185, tbsp=12, tsp=4)),
  'pasta': ('20120', P(cup=100, unit=0)), 'bread': ('18069', P(unit=28)),
  'oats': ('08120', P(cup=81, tbsp=5, tsp=1.7)), 'quinoa': ('20035', P(cup=170, tbsp=11, tsp=3.5)),
  'panko breadcrumbs': ('18079', P(cup=60, tbsp=4, tsp=1.3)),
@@ -139,7 +139,7 @@ MAP = {
 # new ingredients: key -> (NDB, portions)
 ADD = {
  # cooked versions for grains people measure after cooking
- 'cooked white rice': ('20045', P(cup=158)), 'cooked rice': ('20045', P(cup=158)),
+ 'cooked white rice': ('20445', P(cup=158)), 'cooked rice': ('20445', P(cup=158)),
  'cooked brown rice': ('20037', P(cup=195)), 'cooked pasta': ('20121', P(cup=140)),
  'cooked quinoa': ('20137', P(cup=185)), 'cooked couscous': ('20029', P(cup=157)),
  'cooked lentils': ('16070', P(cup=198)), 'cooked barley': ('20006', P(cup=157)),
@@ -252,3 +252,32 @@ json.dump(sources, open(os.path.join(OUT, 'sources.json'), 'w'), indent=1)
 with open(os.path.join(OUT, 'audit.csv'), 'w', newline='') as fh:
     w = csv.writer(fh); w.writerow(['ingredient', 'source', 'old kcal', 'new kcal', 'old p', 'new p', 'old c', 'new c', 'old f', 'new f', 'old na', 'new na', 'old cup g', 'new cup g', 'old unit g', 'new unit g']); w.writerows(audit)
 print(len(new), 'entries;', sum(1 for v in MAP.values() if v is None), 'estimates;', len(ADD), 'added')
+
+# ---------------- micronutrients ----------------
+# Per 100 g. Blank in USDA = not analysed -> null (unknown), never 0.
+MICRO = [  # (code, SR28 column, unit, label)
+ ('k', 'Potassium', 'mg', 'Potassium'), ('ca', 'Calcium', 'mg', 'Calcium'), ('fe', 'Iron', 'mg', 'Iron'),
+ ('vd', 'Vit_D_mcg', 'µg', 'Vitamin D'), ('va', 'Vit_A_RAE', 'µg', 'Vitamin A'), ('vc', 'Vit_C', 'mg', 'Vitamin C'),
+ ('ve', 'Vit_E', 'mg', 'Vitamin E'), ('vk', 'Vit_K', 'µg', 'Vitamin K'), ('b1', 'Thiamin', 'mg', 'Thiamine'),
+ ('b2', 'Riboflavin', 'mg', 'Riboflavin'), ('b3', 'Niacin', 'mg', 'Niacin'), ('b6', 'Vit_B6', 'mg', 'Vitamin B6'),
+ ('fol', 'Folate_DFE', 'µg', 'Folate'), ('b12', 'Vit_B12', 'µg', 'Vitamin B12'), ('chl', 'Choline_Tot', 'mg', 'Choline'),
+ ('mg', 'Magnesium', 'mg', 'Magnesium'), ('ph', 'Phosphorus', 'mg', 'Phosphorus'), ('zn', 'Zinc', 'mg', 'Zinc'),
+ ('se', 'Selenium', 'µg', 'Selenium'), ('cu', 'Copper', 'mg', 'Copper'), ('mn', 'Manganese', 'mg', 'Manganese'),
+ ('mufa', 'FA_Mono', 'g', 'Monounsaturated fat'), ('pufa', 'FA_Poly', 'g', 'Polyunsaturated fat'),
+]
+ndb_of = {k: (v[0] if v else None) for k, v in MAP.items()}
+ndb_of.update({k: v[0] for k, v in ADD.items()})
+def mval(ndb, col):
+    v = num(rows[ndb][col]) if ndb else None
+    return None if v is None else (round(v, 3) if v < 1 else round(v, 1))
+micro_rows = {k: [mval(ndb_of.get(k), col) for _, col, _, _ in MICRO] for k in new}
+micro = {'cols': [m[0] for m in MICRO], 'units': [m[2] for m in MICRO], 'labels': [m[3] for m in MICRO],
+         'rows': {k: v for k, v in micro_rows.items() if any(x is not None for x in v)}}
+open(os.path.join(OUT, 'nutri_micro.js'), 'w').write(
+    '// Vitamins & minerals per 100 g (USDA SR Legacy). null = not measured by USDA (unknown, not zero).\n'
+    'const NUTRI_MICRO = ' + json.dumps(micro, separators=(',', ':'), ensure_ascii=False).replace('NaN', 'null') + ';')
+codes = {k: (v.split(' ')[3].rstrip(':') if v.startswith('USDA') else 'est') for k, v in sources.items()}
+open(os.path.join(OUT, 'nutri_source.js'), 'w').write(
+    "// USDA SR Legacy NDB number per ingredient ('est' = typical label values, no USDA entry)\n"
+    'const NUTRI_SOURCE = ' + json.dumps(codes, separators=(',', ':')) + ';')
+print(len(micro['rows']), 'entries with micronutrients')

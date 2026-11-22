@@ -74,3 +74,23 @@ test('meat and fish are stored raw', () => {
   assert.strictEqual(DB['chicken breast'].kcal, 120);
   assert.ok(DB['salmon'].kcal < 220 && DB['egg'].kcal === 143);
 });
+
+const MICRO = grab('NUTRI_MICRO');
+test('vitamins & minerals: every USDA ingredient has them, values are sane', () => {
+  const usda = Object.keys(DB).filter(k => SOURCE[k] !== 'est');
+  const missing = usda.filter(k => !MICRO.rows[k]);
+  assert.deepStrictEqual(missing, [], 'USDA entries without micronutrients');
+  const col = c => MICRO.cols.indexOf(c);
+  for (const [k, r] of Object.entries(MICRO.rows)) {
+    assert.strictEqual(r.length, MICRO.cols.length, k);
+    for (const v of r) assert.ok(v === null || (typeof v === 'number' && v >= 0), `${k}: ${v}`);
+    // monounsaturated + polyunsaturated + saturated can't exceed total fat
+    const mufa = r[col('mufa')] || 0, pufa = r[col('pufa')] || 0;
+    assert.ok(mufa + pufa + DB[k].sf <= DB[k].f + 1, `${k}: fat breakdown exceeds total fat`);
+  }
+  // known USDA values
+  assert.strictEqual(MICRO.rows['egg'][col('ca')], 56);
+  assert.strictEqual(MICRO.rows['spinach'][col('vk')], 482.9);
+  assert.strictEqual(MICRO.rows['salmon'][col('vd')], 11);
+  assert.ok(MICRO.rows['white rice'][col('fol')] < 20, 'white rice should be unenriched (as sold in Canada)');
+});

@@ -116,6 +116,19 @@ test('nutrition label: Canadian by default, US on request, rounded like real lab
   await win.keyboard.press('Escape');
 });
 
+test('label shows vitamins & minerals (Canada: potassium, calcium, iron; more on request)', async () => {
+  await win.evaluate(() => openDetail(ALL_RECIPES.find(r => r.title === 'Test Omelette')));
+  const top = await win.innerText('.nutrition-label');
+  for (const n of ['Potassium', 'Calcium', 'Iron']) assert.match(top, new RegExp(n));
+  // 3 eggs + 30 g cheddar: ~ 3*50*56/100 + 30*710/100 = 84 + 213 = ~297 mg calcium
+  const ca = Number((top.match(/Calcium (?:≥ )?([\d.]+) mg/) || [])[1]);
+  assert.ok(ca > 270 && ca < 320, `calcium ${ca}`);
+  await win.click('.nl-more summary');
+  const more = await win.innerText('.nl-more');
+  for (const n of ['Vitamin D', 'Vitamin B12', 'Folate', 'Monounsaturated fat']) assert.match(more, new RegExp(n));
+  await win.keyboard.press('Escape');
+});
+
 test('filters include the nutrition groups', async () => {
   await win.click('#filtersBtn'); await win.waitForTimeout(300);
   const groups = await win.evaluate(() => [...new Set([...document.querySelectorAll('.fchip-btn')].map(b => b.dataset.g))]);
