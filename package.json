@@ -1,7 +1,7 @@
 {
   "name": "recipe-box",
   "productName": "Recipe Box",
-  "version": "2.0.1",
+  "version": "2.1.0",
   "description": "A private recipe box with nutrition, filters and a shopping list.",
   "author": "Karim Ghossein",
   "license": "UNLICENSED",
@@ -10,23 +10,39 @@
   "scripts": {
     "start": "electron .",
     "dist:mac": "electron-builder --mac --universal --publish never",
-    "dist:win": "electron-builder --win --x64 --publish never"
+    "dist:win": "electron-builder --win --x64 --publish never",
+    "test": "node --test --test-concurrency=1 \"tests/*.test.js\""
   },
   "devDependencies": {
     "electron": "45.2.3",
-    "electron-builder": "26.18.0"
+    "electron-builder": "26.18.0",
+    "playwright": "1.64.1"
   },
   "build": {
     "appId": "com.karimghossein.recipebox",
     "productName": "Recipe Box",
-    "copyright": "Copyright © 2026 Karim Ghossein",
-    "directories": { "output": "dist", "buildResources": "build" },
-    "files": ["electron/**", "app/**", "package.json"],
+    "copyright": "Copyright \u00a9 2026 Karim Ghossein",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**",
+      "app/**",
+      "package.json"
+    ],
     "asar": true,
     "mac": {
       "category": "public.app-category.lifestyle",
       "icon": "build/icon.png",
-      "target": [{ "target": "dmg", "arch": ["universal"] }],
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "universal"
+          ]
+        }
+      ],
       "identity": "-",
       "hardenedRuntime": false,
       "gatekeeperAssess": false,
@@ -34,15 +50,34 @@
     },
     "dmg": {
       "title": "Recipe Box ${version}",
-      "window": { "width": 540, "height": 380 },
+      "window": {
+        "width": 540,
+        "height": 380
+      },
       "contents": [
-        { "x": 140, "y": 190, "type": "file" },
-        { "x": 400, "y": 190, "type": "link", "path": "/Applications" }
+        {
+          "x": 140,
+          "y": 190,
+          "type": "file"
+        },
+        {
+          "x": 400,
+          "y": 190,
+          "type": "link",
+          "path": "/Applications"
+        }
       ]
     },
     "win": {
       "icon": "build/icon.png",
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "artifactName": "Recipe-Box-Setup-${version}.${ext}"
     },
     "nsis": {
