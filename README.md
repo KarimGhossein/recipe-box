@@ -37,10 +37,6 @@ Each ingredient is a row: amount, unit, an ingredient linked to the nutrition da
 
 ## Building
 
-Push a version tag and GitHub builds both installers and publishes a release:
-
-```
-git tag v2.0.1 && git push origin v2.0.1
-```
+Every push to `main` builds both installers on GitHub (Actions tab). To publish a new release, bump `"version"` in `package.json` (for example to `2.0.1`) and push. The Releases page gets the new installers automatically.
 
 To build locally, run `npm ci`, then `npm run dist:mac` (on a Mac) or `npm run dist:win`. Use `npm start` to run the app without packaging.
