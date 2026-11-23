@@ -247,6 +247,18 @@
   .nl-more summary{cursor:pointer; font-size:12px; font-weight:600; padding:5px 0; list-style:none;}
   .nl-more summary::-webkit-details-marker{display:none;}
   .nl-more summary::before{content:'+ ';} .nl-more[open] summary::before{content:'− ';}
+  .ing-line{display:inline-flex; flex-wrap:wrap; align-items:baseline; gap:6px;}
+  .ing-amt{font-variant-numeric:tabular-nums; color:var(--ink); font-weight:500;}
+  .ing-tag{display:inline-block; padding:1px 10px; border:1px solid var(--gold-line); border-radius:999px; background:color-mix(in srgb, var(--gold-line) 14%, transparent); color:var(--ink); font-size:.94em; line-height:1.5;}
+  .ing-note{color:var(--ink-soft); font-style:italic;}
+  .ing-row input.ing-name.linked{border-color:var(--gold-line); border-radius:999px; background:color-mix(in srgb, var(--gold-line) 14%, var(--card)); font-weight:500; padding-left:14px;}
+  .cart-choice{display:none; position:absolute; z-index:20; top:calc(100% + 6px); left:0; background:var(--card); border:1px solid var(--gold-line); box-shadow:var(--shadow-lg); padding:10px; min-width:230px;}
+  .cart-choice.show{display:block;}
+  .cart-choice p{margin:0 0 8px; font-size:12px; color:var(--ink-soft);}
+  .cart-choice button{display:block; width:100%; text-align:left; margin-top:6px;}
+  .cart-wrap{position:relative; display:inline-block;}
+  .shop-mode{font-size:11px; padding:3px 8px; border:1px solid var(--border-strong); background:transparent; color:var(--ink-soft); border-radius:999px; cursor:pointer; white-space:nowrap;}
+  .shop-mode:hover{border-color:var(--gold-line); color:var(--ink);}
   /* ---------- Ingredient editor ---------- */
   .ing-head, .ing-row{display:grid; grid-template-columns:78px 96px minmax(0,1.5fr) minmax(0,1fr) 30px; gap:8px; align-items:start;}
   .ing-head{font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.14em; color:var(--ink-soft); padding:0 0 6px; opacity:.85;}
@@ -1635,9 +1647,7 @@ function parseQty(str){
 }
 function composeIngText(r){
   const q = fmtQty(r.qty);
-  let u = r.unit || '';
-  if(u === 'l') u = 'L';
-  if(['clove','slice','piece','can','bunch','pinch'].includes(u) && r.qty != null && r.qty > 1) u = u === 'bunch' ? 'bunches' : u === 'pinch' ? 'pinches' : u + 's';
+  const u = unitWord(r.unit || '', r.qty);
   let name = (r.label || r.item || '').trim();
   // "3 egg" -> "3 eggs" for plain counted items named exactly as in the database
   if(!r.unit && r.qty != null && r.qty > 1 && r.item && name.toLowerCase() === r.item && !/s$/.test(name)){
@@ -1680,6 +1690,23 @@ function microFor(key){
   if(!row) return null;
   const o = {}; NUTRI_MICRO.cols.forEach((c, i) => { o[c] = row[i]; });
   return o;
+}
+/* Ingredient names for display: sentence case, proper nouns keep their capitals. Stored data is unchanged. */
+const PROPER_WORDS = {dijon:'Dijon', greek:'Greek', parmesan:'Parmesan', parmigiano:'Parmigiano', reggiano:'Reggiano', romano:'Romano',
+  asiago:'Asiago', gruyere:'Gruyère', 'gruyère':'Gruyère', swiss:'Swiss', brie:'Brie', gouda:'Gouda', colby:'Colby', cheddar:'Cheddar',
+  italian:'Italian', caesar:'Caesar', worcestershire:'Worcestershire', brussels:'Brussels', american:'American', english:'English',
+  french:'French', thai:'Thai', mexican:'Mexican', cajun:'Cajun', kalamata:'Kalamata', bbq:'BBQ', usda:'USDA'};
+function displayName(name){
+  let t = String(name == null ? '' : name).trim();
+  if(!t) return t;
+  t = t.replace(/\bmonterey jack\b/gi, 'Monterey Jack').replace(/[A-Za-zÀ-ÿ]+/g, w => PROPER_WORDS[w.toLowerCase()] || w);
+  return t.charAt(0).toUpperCase() + t.slice(1);
+}
+function unitWord(u, q){
+  if(!u) return '';
+  if(u === 'l') return 'L';
+  if(['cup','clove','slice','piece','can','bunch','pinch'].includes(u) && q != null && q > 1) return u === 'bunch' ? 'bunches' : u === 'pinch' ? 'pinches' : u + 's';
+  return u;
 }
 function computeNutritionRaw(recipe){
   const servings = Math.max(1, recipe.servings||1);
@@ -2486,7 +2513,7 @@ function ingStatusHtml(r){
   if(!r.item) return {warn:true, html:`<span class="dot"></span>Not in the nutrition database, so it isn't counted. <a data-act="add-db">Add it</a> or pick a suggestion.`};
   const res = resolveIngredient(r);
   const db = effectiveDb()[r.item];
-  const name = `<b>${escapeHtml(r.item)}</b>`;
+  const name = `<b>${escapeHtml(displayName(r.item))}</b>`;
   const auto = r.auto ? ' · matched automatically, change it if wrong' : '';
   if(res.why === 'noqty') return {warn:false, html:`<span class="dot" style="background:var(--gold-line)"></span>${name} · no amount, so it isn't counted${auto}`};
   if(res.why === 'nounit'){
@@ -2501,7 +2528,7 @@ function rowHtml(r, i){
   return `<div class="ing-row" data-i="${i}">
     <input class="ing-qty" inputmode="decimal" placeholder="Qty" value="${escapeHtml(r.qty != null && !isNaN(r.qty) ? fmtQty(r.qty) : (r.qtyRaw||''))}" aria-label="Amount">
     <select class="ing-unit" aria-label="Unit">${unitOptions(r.unit||'')}</select>
-    <div class="ing-name-wrap"><input class="ing-name" placeholder="Search ingredients…" autocomplete="off" value="${escapeHtml(r.label||'')}" aria-label="Ingredient" role="combobox" aria-autocomplete="list" aria-expanded="false"><div class="ing-suggest" role="listbox"></div></div>
+    <div class="ing-name-wrap"><input class="ing-name" placeholder="Search ingredients…" autocomplete="off" value="${escapeHtml(displayName(r.label||''))}" aria-label="Ingredient" role="combobox" aria-autocomplete="list" aria-expanded="false"><div class="ing-suggest" role="listbox"></div></div>
     <input class="ing-note" placeholder="Note (e.g. diced)" value="${escapeHtml(r.note||'')}" aria-label="Note">
     <button type="button" class="ing-del" title="Remove ingredient" aria-label="Remove ingredient">×</button>
     <div class="ing-status"></div>
@@ -2523,6 +2550,7 @@ function updateRowStatus(i){
   const el = row.querySelector('.ing-status');
   el.className = 'ing-status' + (st && st.warn ? ' warn' : '');
   el.innerHTML = st ? st.html : '';
+  row.querySelector('.ing-name').classList.toggle('linked', !!formIngs[i].item);
 }
 function ingredientsChanged(){
   // Editing ingredients switches imported recipes from the source's fixed nutrition panel to live numbers.
@@ -2552,7 +2580,7 @@ function showSuggest(row, i){
   const list = suggestFor(input.value);
   const db = effectiveDb();
   if(!list.length){ box.classList.remove('show'); input.setAttribute('aria-expanded','false'); return; }
-  box.innerHTML = list.map((k, j) => `<button type="button" role="option" data-key="${escapeHtml(k)}" class="${j===0?'hi':''}">${escapeHtml(k)}${Object.prototype.hasOwnProperty.call(CUSTOM_DB,k)?'<em class="sugg-mine">yours</em>':''}<span>${Math.round(db[k].kcal)} kcal / 100 g</span></button>`).join('');
+  box.innerHTML = list.map((k, j) => `<button type="button" role="option" data-key="${escapeHtml(k)}" class="${j===0?'hi':''}">${escapeHtml(displayName(k))}${Object.prototype.hasOwnProperty.call(CUSTOM_DB,k)?'<em class="sugg-mine">yours</em>':''}<span>${Math.round(db[k].kcal)} kcal / 100 g</span></button>`).join('');
   box.classList.add('show'); input.setAttribute('aria-expanded','true');
 }
 function hideSuggest(row){ const b = row.querySelector('.ing-suggest'); b.classList.remove('show'); row.querySelector('.ing-name').setAttribute('aria-expanded','false'); }
@@ -2561,7 +2589,7 @@ function pickSuggestion(i, key){
   const wasLabel = (r.label||'').trim().toLowerCase();
   r.item = key; r.auto = false;
   // keep the user's own wording only if it's more specific than what they typed to search
-  if(!wasLabel || key.includes(wasLabel) || wasLabel.length < 3) r.label = key;
+  if(!wasLabel || key.includes(wasLabel) || wasLabel.length < 3) r.label = displayName(key);
   const row = $('#ingRows').querySelector(`.ing-row[data-i="${i}"]`);
   row.querySelector('.ing-name').value = r.label;
   hideSuggest(row); updateRowStatus(i); ingredientsChanged();
@@ -2911,8 +2939,13 @@ function renderDetail(recipe){
   const inCart = SHOP.items.some(i=>i.id===recipe.id);
 
   const ingHtml = (recipe.ingredients||[]).map(ing=>{
-    const matched = resolveIngredient(ing).key;
-    return `<li><input type="checkbox" class="ing-check"><span>${escapeHtml(scaledAmountText(ing.text, factor))}${!matched?'<span class="unmatched-dot" title="Not in the nutrition database"></span>':''}</span></li>`;
+    const r = ingFromStored(ing);
+    if(r.item && resolveIngredient(r).key){
+      const q = r.qty != null ? r.qty * factor : null;
+      const amt = [q != null ? fmtQty(q) : '', unitWord(r.unit, q)].filter(Boolean).join(' ');
+      return `<li><input type="checkbox" class="ing-check"><span class="ing-line">${amt ? `<span class="ing-amt">${escapeHtml(amt)}</span>` : ''}<span class="ing-tag" title="${escapeHtml('Linked to ' + displayName(r.item) + ' in the nutrition database')}">${escapeHtml(displayName(r.label || r.item))}</span>${r.note ? `<span class="ing-note">${escapeHtml(r.note)}</span>` : ''}</span></li>`;
+    }
+    return `<li><input type="checkbox" class="ing-check"><span>${escapeHtml(displayName(scaledAmountText(ing.text, factor)))}<span class="unmatched-dot" title="Not in the nutrition database, so it isn't counted"></span></span></li>`;
   }).join('') || '<li style="color:var(--ink-soft);">No ingredients listed.</li>';
   const stepsHtml = (recipe.steps||[]).map(s=>`<li><span>${escapeHtml(s)}</span></li>`).join('') || '<li><span style="color:var(--ink-soft);">No steps listed.</span></li>';
   const cls = classify(recipe);
@@ -2939,7 +2972,10 @@ function renderDetail(recipe){
   $('#detailBody').innerHTML = `
     <div class="detail-actions-top no-print">
       <button class="btn btn-quiet btn-sm ${recipe.fav?'on':''}" data-act="fav">${ICON.star}<span>${recipe.fav?'Favorited':'Favorite'}</span></button>
-      <button class="btn btn-quiet btn-sm ${inCart?'on':''}" data-act="cart">${ICON.bag}<span>${inCart?'On shopping list':'Add to shopping list'}</span></button>
+      <span class="cart-wrap"><button class="btn btn-quiet btn-sm ${inCart?'on':''}" data-act="cart" title="${inCart?'Remove from shopping list':''}">${ICON.bag}<span>${inCart?'On shopping list':'Add to shopping list'}</span></button>
+        <span class="cart-choice" role="menu"><p>Add the ingredients…</p>
+          <button class="btn btn-outline btn-sm" data-act="cart-amounts" role="menuitem">With amounts</button>
+          <button class="btn btn-outline btn-sm" data-act="cart-names" role="menuitem">Ingredients only</button></span></span>
       <button class="btn btn-quiet btn-sm" data-act="print">${ICON.print}<span>Print</span></button>
       <button class="btn btn-quiet btn-sm" data-act="edit">${ICON.edit}<span>Edit</span></button>
     </div>
@@ -2965,11 +3001,17 @@ function renderDetail(recipe){
 $('#detailBody').addEventListener('click', async e=>{
   const recipe = recipeById(currentDetailId); if(!recipe) return;
   const t = e.target;
+  if(!t.closest('.cart-wrap')) document.querySelectorAll('#detailBody .cart-choice.show').forEach(m => m.classList.remove('show'));
   if(t.matches('.ing-check')){ t.closest('li').classList.toggle('checked', t.checked); return; }
   const btn = t.closest('[data-act]'); if(!btn) return;
   switch(btn.dataset.act){
     case 'fav': toggleFav(recipe.id); break;
-    case 'cart': toggleCart(recipe); renderDetail(recipe); break;
+    case 'cart':
+      if(SHOP.items.some(i=>i.id===recipe.id)){ toggleCart(recipe); renderDetail(recipe); }
+      else btn.parentElement.querySelector('.cart-choice').classList.toggle('show');
+      break;
+    case 'cart-amounts': toggleCart(recipe, 'amounts'); renderDetail(recipe); break;
+    case 'cart-names': toggleCart(recipe, 'names'); renderDetail(recipe); break;
     case 'print': window.print(); break;
     case 'edit': closeDetail(); openForm(recipe); break;
     case 'down': detailServingsOverride[recipe.id] = Math.max(1, (detailServingsOverride[recipe.id]||recipe.servings) - 1); renderDetail(recipe); break;
@@ -3022,10 +3064,13 @@ async function saveShopping(){
   $('#cartCount').textContent = SHOP.items.length || '';
   $('#cartCount').dataset.n = SHOP.items.length;
 }
-function toggleCart(recipe){
+function toggleCart(recipe, mode){
   const i = SHOP.items.findIndex(x=>x.id===recipe.id);
   if(i>=0){ SHOP.items.splice(i,1); showToast('Removed from shopping list'); }
-  else { SHOP.items.push({id:recipe.id, servings: detailServingsOverride[recipe.id] || recipe.servings}); showToast('Added to shopping list'); }
+  else {
+    SHOP.items.push({id:recipe.id, servings: detailServingsOverride[recipe.id] || recipe.servings, mode: mode === 'names' ? 'names' : 'amounts'});
+    showToast(mode === 'names' ? 'Ingredients added to shopping list (no amounts)' : 'Added to shopping list with amounts');
+  }
   saveShopping();
 }
 function removeFromShopping(id, silent){
@@ -3052,7 +3097,8 @@ function buildShoppingItems(){
         ? {amount: ing.qty == null ? null : ing.qty, unit: calcUnit(ing.unit) == null ? (ing.unit && ing.unit !== 'unit' ? ing.unit : null) : ing.unit, name: ing.label || ing.item || ing.text}
         : parseIngredientLine(ing.text);
       let key, display, unit = null, amount = null;
-      if(p.amount == null){ key = 'txt:'+ing.text.toLowerCase(); display = ing.text; }
+      if(it.mode === 'names'){ key = shopKey(p.name || ing.text) || ing.text.toLowerCase(); display = cleanName(p.name || ing.text); }
+      else if(p.amount == null){ key = 'txt:'+ing.text.toLowerCase(); display = ing.text; }
       else {
         key = shopKey(p.name) || p.name.toLowerCase(); display = cleanName(p.name);
         unit = (p.unit && p.unit !== 'unit') ? p.unit : ''; amount = p.amount * factor;
@@ -3067,8 +3113,8 @@ function buildShoppingItems(){
     return unit ? `${v} ${unit}` : v;
   };
   return Array.from(map.values()).map(e=>({
-    key:e.key, name:e.display,
-    qty: e.textOnly ? '' : Object.entries(e.parts).map(([u,n])=>fmtQty(u,n)).join(' + ')
+    key:e.key, name:displayName(e.display),
+    qty: Object.keys(e.parts).length ? Object.entries(e.parts).map(([u,n])=>fmtQty(u,n)).join(' + ') : ''
   })).sort((a,b)=>a.name.toLowerCase().localeCompare(b.name.toLowerCase()));
 }
 
@@ -3082,6 +3128,7 @@ function renderShopping(){
     const r = recipeById(it.id); if(!r) return '';
     return `<div class="shop-recipe" data-id="${escapeHtml(r.id)}">
       <span class="t">${escapeHtml(r.title)}</span>
+      <button class="shop-mode no-print" data-sact="mode" title="Switch between amounts and ingredient names only">${it.mode === 'names' ? 'Names only' : 'With amounts'}</button>
       <span class="step no-print"><button data-sact="down" aria-label="Fewer">−</button><span>${it.servings} serving${it.servings!==1?'s':''}</span><button data-sact="up" aria-label="More">+</button></span>
       <button class="icon-btn no-print" data-sact="remove" title="Remove">${ICON.x}</button>
     </div>`;
@@ -3093,7 +3140,7 @@ function renderShopping(){
     ${recipesHtml}
     <h4 class="section-title">Ingredients · ${items.length}</h4>
     <ul class="shop-list">${listHtml}</ul>
-    <p class="hint no-print">Quantities are added together when the unit matches. Tick items off as you shop.</p>
+    <p class="hint no-print">Quantities are added together when the unit matches. Recipes set to <b>Names only</b> add the ingredient without an amount. Tick items off as you shop.</p>
     <div class="shop-actions no-print">
       <button class="btn btn-primary btn-sm" data-sact="copy">Copy list</button>
       <button class="btn btn-outline btn-sm" data-sact="print">Print</button>
@@ -3112,6 +3159,7 @@ $('#shopBody').addEventListener('click', async e=>{
     case 'up': item.servings++; saveShopping(); renderShopping(); break;
     case 'down': item.servings = Math.max(1, item.servings-1); saveShopping(); renderShopping(); break;
     case 'remove': SHOP.items = SHOP.items.filter(i=>i!==item); saveShopping(); renderShopping(); break;
+    case 'mode': item.mode = item.mode === 'names' ? 'amounts' : 'names'; saveShopping(); renderShopping(); break;
     case 'print': window.print(); break;
     case 'uncheck': SHOP.checked = {}; saveShopping(); renderShopping(); break;
     case 'clear': SHOP = {items:[], checked:{}}; saveShopping(); renderShopping(); showToast('Shopping list cleared'); break;

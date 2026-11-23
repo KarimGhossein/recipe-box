@@ -1,7 +1,7 @@
 {
   "name": "recipe-box",
   "productName": "Recipe Box",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "A private recipe box with nutrition, filters and a shopping list.",
   "author": "Karim Ghossein",
   "license": "UNLICENSED",

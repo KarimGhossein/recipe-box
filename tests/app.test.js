@@ -86,6 +86,7 @@ test('nutrition maths: 100 g raw chicken breast + 1 cup dry white rice = 795 kca
 
 test('new recipe through the ingredient editor saves as a file', async () => {
   await win.click('#newRecipeBtn');
+  await win.waitForFunction(() => document.activeElement && document.activeElement.id === 'f-title');  // form focuses the title after opening
   await win.fill('#f-title', 'Test Omelette');
   await win.fill('#f-servings', '1');
   await win.fill('.ing-row[data-i="0"] .ing-qty', '3');
@@ -98,8 +99,33 @@ test('new recipe through the ingredient editor saves as a file', async () => {
   const file = fs.readdirSync(PERSONAL).find(f => f.startsWith('recipe%3A') && f !== 'recipe%3Alegacy1.txt');
   assert.ok(file, 'recipe file written');
   const saved = JSON.parse(fs.readFileSync(path.join(PERSONAL, file), 'utf8'));
-  assert.strictEqual(saved.ingredients[0].text, '3 eggs, beaten');
+  assert.strictEqual(saved.ingredients[0].text, '3 Eggs, beaten');
   assert.strictEqual(saved.ingredients[1].item, 'cheddar cheese');
+});
+
+test('recipe view: database ingredients are capitalised tags, unknown ones stay plain text', async () => {
+  await win.evaluate(() => openDetail(recipeById('legacy1')));
+  const tags = await win.$$eval('#detailBody .ing-tag', els => els.map(e => e.textContent));
+  assert.ok(tags.includes('Ground beef') && tags.includes('Onion'), 'tags: ' + tags);
+  const notes = await win.$$eval('#detailBody .ing-note', els => els.map(e => e.textContent));
+  assert.ok(notes.includes('diced'), 'note shown beside the tag');
+  assert.strictEqual(await win.evaluate(() => displayName('dijon mustard')), 'Dijon mustard');
+  assert.strictEqual(await win.evaluate(() => displayName('monterey jack cheese')), 'Monterey Jack cheese');
+  await win.keyboard.press('Escape');
+});
+
+test('shopping list: add with amounts or ingredients only, and switch later', async () => {
+  await win.evaluate(() => { SHOP = {items:[], checked:{}}; openDetail(recipeById('legacy1')); });
+  await win.click('#detailBody [data-act="cart"]');
+  await win.click('#detailBody [data-act="cart-names"]');
+  let items = await win.evaluate(() => buildShoppingItems());
+  assert.ok(items.length > 0 && items.every(i => i.qty === ''), 'names only: ' + JSON.stringify(items));
+  assert.ok(items.some(i => i.name === 'Ground beef'), 'capitalised names');
+  await win.evaluate(() => { SHOP.items[0].mode = 'amounts'; });
+  items = await win.evaluate(() => buildShoppingItems());
+  assert.ok(items.find(i => i.name === 'Ground beef').qty === '1 lb', JSON.stringify(items));
+  await win.evaluate(() => { SHOP = {items:[], checked:{}}; saveShopping(); });
+  await win.keyboard.press('Escape');
 });
 
 test('nutrition label: Canadian by default, US on request, rounded like real labels', async () => {
