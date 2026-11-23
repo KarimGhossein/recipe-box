@@ -16,6 +16,10 @@ A desktop recipe app built with Electron. The owner is a paramedic who also has 
 - Nutrition and diet tags are estimates. Say so; don't oversell them.
 - Micronutrients: `null` means USDA didn't measure it (unknown), never 0. Recipe totals carry a per-nutrient coverage figure, and the label shows `≥` when under 90%. White rice is unenriched on purpose (as sold in Canada).
 - Data lives in `<userData>/data/{personal,shared}/<quote(key)>.txt`. Never change that layout without a migration.
+- Explanations live on the About page (`#aboutOverlay`, sections `about-<id>`). Elsewhere, link to it with `estCue('<id>')` instead of writing disclaimers into a section.
+- Weight conversions: `WEIGHT_YIELD` turns purchase weight into what the database entry describes (bacon: USDA cooked values, 28 g raw slice → 9.1 g; mussels and clams in the shell). `COOK_RETENTION` applies USDA vitamin retention factors when a recipe has a cook time. Lines like "to taste" go to `unmeasured`, not `unmatched`, so they don't flag a recipe as incomplete.
+- Shopping list: `shopName` cleans names, `fmtShopQty` adds compatible units then rounds up once. Rules are listed on the About page; keep the two in sync.
+- Tools sit in the fixed right-side rail (`#rail`). Gluten-free mode is the `diet: 'Gluten free'` facet, shown with `paintGlutenFree()` (rail button, banner, `.gf-frame` edge).
 
 ## Workflow
 - `npm start` runs the app from source. Add `RECIPE_BOX_DATA_DIR=/tmp/x` to use a throwaway data folder.

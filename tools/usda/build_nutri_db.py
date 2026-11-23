@@ -27,7 +27,7 @@ MAP = {
  'water': ('14555', {}),
  'chicken breast': ('05062', P(unit=170)), 'chicken thigh': ('05096', P(unit=110)),
  'ground beef': ('23567', {}), 'ground turkey': ('05305', {}),
- 'bacon': None,  # cooked slice values (rendered fat is discarded); unit = 1 cooked slice
+ 'bacon': ('10861', P(unit=9.1)),  # USDA cooked bacon (rendered fat discarded); unit = what 1 raw slice (28 g) cooks to. Raw weights are converted with COOK_YIELD in the app.
  'salmon': ('15236', P(unit=170)), 'shrimp': ('15270', P(unit=8)),
  'egg': ('01123', P(unit=50)), 'tofu': ('16427', {}), 'milk': ('01077', {}),
  'heavy cream': ('01053', {}), 'butter': ('01001', {}), 'cheddar cheese': ('01009', {}),
@@ -73,7 +73,7 @@ MAP = {
  'cashews': ('12087', {}), 'cream of mushroom soup': ('06043', {}),
  'diced tomatoes, canned': ('11531', {}), 'tomato paste': ('11546', {}), 'tomato sauce': ('11549', {}),
  'coconut sugar': None, 'cod': ('15015', {}), 'tilapia': ('15261', {}), 'crab': ('15141', P(cup=135)),
- 'scallops': ('15172', P(unit=15)), 'mussels': ('15164', {}), 'lobster': ('15147', {}),
+ 'scallops': ('15172', P(unit=15)), 'mussels': ('15164', P(unit=6)), 'lobster': ('15147', {}),
  'almond milk': ('14091', {}), 'oat milk': None, 'soy milk': ('16139', {}), 'cottage cheese': ('01012', {}),
  'feta cheese': ('01019', {}), 'goat cheese': ('01159', {}), 'ricotta cheese': ('01036', {}),
  'blue cheese': ('01004', {}), 'brie cheese': ('01006', {}), 'swiss cheese': ('01040', {}),

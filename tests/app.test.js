@@ -128,6 +128,69 @@ test('shopping list: add with amounts or ingredients only, and switch later', as
   await win.keyboard.press('Escape');
 });
 
+test('shopping list: clean names, units combined, rounded up once', async () => {
+  const names = await win.evaluate(() => [
+    'garlic, minced (about 1 tsp)', 'red onion -- finely diced', 'crushed tomatoes', 'fresh basil leaves, for garnish',
+    'salt and pepper, to taste', '*cilantro', 'of flour', 'large eggs, beaten'].map(shopName));
+  assert.deepStrictEqual(names, ['garlic', 'red onion', 'crushed tomatoes', 'basil leaves', 'salt and pepper', 'cilantro', 'flour', 'eggs']);
+  const q = await win.evaluate(() => [
+    fmtShopQty({tsp: 1, tbsp: 1}),          // 4 tsp -> 1 1/3 tbsp -> 1 1/2 tbsp
+    fmtShopQty({cup: 1/3 + 1/3}),           // 2/3 cup -> 3/4 cup
+    fmtShopQty({cup: 1.2}),                 // over a cup: nearest 1/2 up
+    fmtShopQty({tsp: 0.3}),                 // under a tbsp: nearest 1/4 tsp up
+    fmtShopQty({g: 250, kg: 0.5}),          // 750 g
+    fmtShopQty({g: 1234}),                  // 1.24 kg
+    fmtShopQty({g: 47.2}),                  // 48 g
+    fmtShopQty({'': 1.5}),                  // whole items round up
+    fmtShopQty({clove: 3}),
+    fmtShopQty({oz: 20}),                   // 1 1/4 lb
+    fmtShopQty({ml: 333})                   // 335 ml
+  ]);
+  assert.deepStrictEqual(q, ['1 ½ tbsp', '¾ cup', '1 ½ cups', '½ tsp', '750 g', '1.24 kg', '48 g', '2', '3 cloves', '1 ¼ lb', '335 ml']);
+  // the same ingredient from two recipes lands on one line, amounts added before rounding
+  const items = await win.evaluate(() => {
+    const a = {id: 'shopA', title: 'A', servings: 2, ingredients: [{text: '1 cup flour'}, {text: '2 cloves garlic, minced'}, {text: '1 egg'}]};
+    const b = {id: 'shopB', title: 'B', servings: 2, ingredients: [{text: '2 tbsp flour'}, {text: '1 clove garlic'}, {text: '2 large eggs, beaten'}]};
+    ALL_RECIPES.push(a, b);
+    SHOP = {items: [{id: 'shopA', servings: 2, mode: 'amounts'}, {id: 'shopB', servings: 2, mode: 'amounts'}], checked: {}};
+    const out = buildShoppingItems().map(i => [i.name, i.qty]);
+    ALL_RECIPES = ALL_RECIPES.filter(r => r !== a && r !== b); SHOP = {items: [], checked: {}};
+    return out;
+  });
+  assert.deepStrictEqual(items, [['Egg', '3'], ['Flour', '1 ½ cups'], ['Garlic', '3 cloves']]);
+});
+
+test('nutrition accuracy: bacon, shellfish in the shell, cooking losses, unmeasured lines', async () => {
+  const r = await win.evaluate(() => {
+    const kcal = (lines, extra) => computeNutritionRaw(Object.assign({servings: 1, ingredients: lines.map(t => ({text: t}))}, extra||{}));
+    return {
+      slice: kcal(['1 slice bacon']).perServing.kcal,                 // USDA: 9.1 g cooked per raw slice
+      rawGrams: kcal(['28 g bacon']).perServing.kcal,                 // a raw slice's weight -> same as one slice
+      cookedGrams: kcal(['28 g cooked bacon']).perServing.kcal,
+      musselsShell: kcal(['1 kg mussels']).perServing.kcal,
+      musselsMeat: kcal(['250 g shucked mussels']).perServing.kcal,
+      count: kcal(['12 mussels']).perServing.kcal,
+      vcRaw: kcal(['1 cup broccoli']).micro.vc,
+      vcCooked: kcal(['1 cup broccoli'], {cook: 10}).micro.vc,
+      caCooked: kcal(['1 cup broccoli'], {cook: 10}).micro.ca, caRaw: kcal(['1 cup broccoli']).micro.ca,
+      toTaste: kcal(['1 cup broccoli', 'Salt and pepper, to taste', 'parsley, for garnish']),
+      pinch: kcal(['pinch of salt']).perServing.na,
+      missing: kcal(['1 cup broccoli', '2 dragonfruit gummies']).unmatched
+    };
+  });
+  assert.ok(Math.abs(r.slice - 9.1 * 4.76) < 0.5, `slice ${r.slice}`);
+  assert.ok(Math.abs(r.rawGrams - r.slice) < 0.5, `raw grams ${r.rawGrams}`);
+  assert.ok(Math.abs(r.cookedGrams - 28 * 4.76) < 1, `cooked grams ${r.cookedGrams}`);
+  assert.ok(Math.abs(r.musselsShell - r.musselsMeat) < 1, `in shell ${r.musselsShell} vs meat ${r.musselsMeat}`);
+  assert.ok(r.count > 0, 'mussels by count are counted');
+  assert.ok(Math.abs(r.vcCooked / r.vcRaw - 0.75) < 0.01, 'vitamin C retention');
+  assert.strictEqual(r.caCooked, r.caRaw, 'minerals unchanged');
+  assert.deepStrictEqual(r.toTaste.unmatched, [], '"to taste" lines are not missing data');
+  assert.strictEqual(r.toTaste.unmeasured.length, 2);
+  assert.ok(r.pinch > 100 && r.pinch < 180, `pinch of salt sodium ${r.pinch}`);
+  assert.deepStrictEqual(r.missing, ['2 dragonfruit gummies']);
+});
+
 test('nutrition label: Canadian by default, US on request, rounded like real labels', async () => {
   await win.evaluate(() => { localStorage.removeItem('rb.labelStyle'); openDetail(ALL_RECIPES.find(r => r.title === 'Test Omelette')); });
   let txt = await win.innerText('.nutrition-label');
@@ -159,6 +222,38 @@ test('filters include the nutrition groups', async () => {
   await win.click('#filtersBtn'); await win.waitForTimeout(300);
   const groups = await win.evaluate(() => [...new Set([...document.querySelectorAll('.fchip-btn')].map(b => b.dataset.g))]);
   for (const g of ['diet', 'fibre', 'satfat', 'sodium']) assert.ok(groups.includes(g), `group ${g}`);
+  assert.ok(!groups.includes('chol'), 'no cholesterol filter');
+  const labels = await win.evaluate(() => Object.values(FACET_ORDER).flat().join(' | '));
+  assert.doesNotMatch(labels, /or less|g\+|Under |Over /, labels);
+  assert.match(labels, /≤ 2 g sat fat/); assert.match(labels, /≥ 5 g fibre/);
+  assert.ok(await win.evaluate(() => !!document.querySelector('#filtersBody .est-cue')), 'Estimate cue in filters');
+  await win.keyboard.press('Escape');
+});
+
+test('toolbar on the right: theme, shopping list, gluten-free mode, more', async () => {
+  const ids = await win.$$eval('#rail .rail-btn', els => els.map(e => e.id));
+  assert.deepStrictEqual(ids, ['themeBtn', 'cartBtn', 'gfToggle', 'moreBtn']);
+  assert.strictEqual(await win.evaluate(() => getComputedStyle(document.getElementById('rail')).position), 'fixed');
+  assert.ok(await win.evaluate(() => !document.querySelector('header.top #cartBtn')), 'moved out of the header');
+  await win.click('#gfToggle');
+  assert.ok(await win.evaluate(() => document.body.classList.contains('gf-mode') && !document.getElementById('gfBanner').hidden));
+  assert.ok(await win.evaluate(() => getFilteredSorted().every(r => classify(r).diet.includes('Gluten free'))));
+  await win.click('#gfOffBtn');
+  assert.ok(await win.evaluate(() => !document.body.classList.contains('gf-mode') && document.getElementById('gfBanner').hidden));
+  await win.click('#moreBtn'); await win.click('#aboutBtn');
+  assert.ok(await win.evaluate(() => document.getElementById('aboutOverlay').classList.contains('show')));
+  await win.keyboard.press('Escape');
+});
+
+test('import panel: paste text gives a preview, then opens the editor', async () => {
+  await win.click('#moreBtn'); await win.click('#importBtn');
+  assert.ok(await win.evaluate(() => document.getElementById('importFallback').hidden), 'page-source fallback hidden until a link fails');
+  await win.click('#importTabText');
+  await win.fill('#import-text', 'Quick Oats\nIngredients\n1 cup oats\n1 cup milk\nMethod\n1. Simmer for five minutes, stirring often.');
+  await win.click('#parseTextBtn');
+  assert.match(await win.innerText('.imp-card'), /Quick Oats[\s\S]*2 ingredients[\s\S]*1 step/i);
+  await win.click('#useImportDraftBtn');
+  assert.strictEqual(await win.inputValue('#f-title'), 'Quick Oats');
   await win.keyboard.press('Escape');
 });
 
