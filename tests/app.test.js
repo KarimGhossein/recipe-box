@@ -69,6 +69,8 @@ test('old text lines convert to linked rows, including "rice, cooked"', async ()
   assert.deepStrictEqual(rows[0], [1, 'lb', 'ground beef', '']);
   assert.deepStrictEqual(rows[2], [1, '', 'onion', 'diced']);
   assert.strictEqual(rows[4][2], 'cooked white rice');
+  // the editor moves focus to the title 50 ms after opening; wait so it can't steal the typing below
+  await win.waitForFunction(() => document.activeElement && document.activeElement.id === 'f-title');
   // published nutrition stays until an ingredient changes
   assert.match(await win.innerText('#formEstimate'), /original recipe/);
   await win.fill('.ing-row[data-i="0"] .ing-qty', '2');
