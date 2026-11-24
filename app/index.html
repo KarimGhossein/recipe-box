@@ -219,11 +219,40 @@
   .gf-btn.on{background:var(--sage); color:var(--bg); box-shadow:0 0 0 3px color-mix(in srgb, var(--sage) 28%, transparent);}
   .gf-btn.on .gf-slash{opacity:1;}
   .gf-btn.on:hover{background:var(--sage); color:var(--bg); filter:brightness(1.08);}
-  .gf-frame{display:none;}
-  body.gf-mode .gf-frame{display:block; position:fixed; inset:0; pointer-events:none; z-index:25;
-    box-shadow:inset 0 0 0 3px color-mix(in srgb, var(--sage) 75%, transparent), inset 0 0 14px 2px color-mix(in srgb, var(--sage) 22%, transparent);
-    animation:gfIn .35s ease;}
-  @keyframes gfIn{from{opacity:0;} to{opacity:1;}}
+  /* Gluten-free mode: the whole palette turns sage, a green wash fills the background and a green edge frames the window.
+     Colours fade over 3 s (only while switching, so light/dark stays instant); filtering itself is instant. */
+  @property --bg{syntax:'<color>'; inherits:true; initial-value:#F4EFE4;}
+  @property --bg-alt{syntax:'<color>'; inherits:true; initial-value:#EAE3D3;}
+  @property --card{syntax:'<color>'; inherits:true; initial-value:#FBF8F0;}
+  @property --border{syntax:'<color>'; inherits:true; initial-value:#D8CEB9;}
+  @property --border-strong{syntax:'<color>'; inherits:true; initial-value:#BDB095;}
+  @property --gold{syntax:'<color>'; inherits:true; initial-value:#80632D;}
+  @property --gold-line{syntax:'<color>'; inherits:true; initial-value:#B8995A;}
+  @property --primary{syntax:'<color>'; inherits:true; initial-value:#5B1A2A;}
+  @property --primary-hover{syntax:'<color>'; inherits:true; initial-value:#74243A;}
+  body.gf-mode{
+    --bg:#E9EFE1; --bg-alt:#DCE5D1; --card:#F5F8EF; --border:#C3D0B3; --border-strong:#9FB389;
+    --gold:#466A38; --gold-line:#86A86C; --primary:#3D6634; --primary-hover:#4C7A41;
+  }
+  :root[data-theme="dark"] body.gf-mode{
+    --bg:#0A100A; --bg-alt:#131C12; --card:#101710; --border:#24331F; --border-strong:#37502F;
+    --gold:#A6CC8A; --gold-line:#6C9256; --primary:#A6CC8A; --primary-hover:#BCDCA3;
+  }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) body.gf-mode{
+    --bg:#0A100A; --bg-alt:#131C12; --card:#101710; --border:#24331F; --border-strong:#37502F;
+    --gold:#A6CC8A; --gold-line:#6C9256; --primary:#A6CC8A; --primary-hover:#BCDCA3;
+  }}
+  body.gf-anim{transition:--bg 3s ease, --bg-alt 3s ease, --card 3s ease, --border 3s ease, --border-strong 3s ease,
+    --gold 3s ease, --gold-line 3s ease, --primary 3s ease, --primary-hover 3s ease;}
+  .gf-wash, .gf-frame{position:fixed; inset:0; pointer-events:none; opacity:0; visibility:hidden;}
+  .gf-wash{z-index:-1; background:radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--sage) 26%, transparent), transparent 65%),
+    radial-gradient(90% 70% at 100% 100%, color-mix(in srgb, var(--sage) 18%, transparent), transparent 60%);}
+  .gf-frame{z-index:25; box-shadow:inset 0 0 0 5px color-mix(in srgb, var(--sage) 85%, transparent), inset 0 0 40px 6px color-mix(in srgb, var(--sage) 30%, transparent);}
+  body.gf-mode .gf-wash, body.gf-mode .gf-frame{opacity:1; visibility:visible;}
+  body.gf-anim .gf-wash, body.gf-anim .gf-frame{transition:opacity 3s ease, visibility 3s;}
+  body.gf-mode .gf-banner{animation:gfIn .6s ease; background:color-mix(in srgb, var(--sage) 18%, var(--card)); border-color:color-mix(in srgb, var(--sage) 70%, var(--border));}
+  @keyframes gfIn{from{opacity:0; transform:translateY(-4px);} to{opacity:1; transform:none;}}
+  @media (prefers-reduced-motion: reduce){ body.gf-anim, body.gf-anim .gf-wash, body.gf-anim .gf-frame{transition:none;} body.gf-mode .gf-banner{animation:none;} }
   .gf-banner{display:flex; align-items:center; gap:14px; padding:12px 14px 12px 12px; margin:0 0 20px; border:1px solid color-mix(in srgb, var(--sage) 45%, var(--border));
     background:color-mix(in srgb, var(--sage) 10%, var(--card)); border-radius:3px; animation:gfIn .25s ease;}
   .gf-banner[hidden]{display:none;}
@@ -243,7 +272,7 @@
     main.wrap{padding-bottom:110px;}
     .gf-banner{flex-wrap:wrap;}
   }
-  @media print{ .rail, .gf-banner, .gf-frame{display:none!important;} }
+  @media print{ .rail, .gf-banner, .gf-frame, .gf-wash{display:none!important;} }
   /* ---------- Import panel ---------- */
   .imp .panel-head h2{margin:0;}
   .imp-sub{margin:6px 0 0; color:var(--ink-soft); font-size:14px;}
@@ -321,6 +350,32 @@
   .hint{font-size:12.5px; color:var(--ink-soft); margin:6px 0 0;}
   .hint code{background:var(--bg-alt); padding:1px 5px; border-radius:2px; font-size:12px;}
   fieldset{border:1px solid var(--border); border-radius:2px; padding:18px 18px 8px; margin:0 0 20px; min-width:0;}
+  .nf-form{border:1.5px solid var(--ink); background:var(--card); color:var(--ink); padding:8px 12px 10px; max-width:380px; font-size:14px;}
+  .nf-head{font-weight:800; font-size:22px; letter-spacing:-.01em; line-height:1.1;}
+  .nf-serv{display:flex; align-items:center; gap:6px; flex-wrap:wrap; padding:4px 0 6px; border-bottom:6px solid var(--ink);}
+  .nf-serv select{width:auto; padding:3px 6px; font-size:13px;}
+  .nf-row{display:flex; justify-content:space-between; align-items:center; gap:8px; padding:3px 0; border-bottom:1px solid color-mix(in srgb, var(--ink) 45%, transparent);}
+  .nf-row > span{display:flex; align-items:center; gap:5px; color:var(--ink-soft); font-size:13px;}
+  .nf-row label{margin:0; font-size:14px; letter-spacing:0; text-transform:none; color:var(--ink); font-weight:400;}
+  .nf-sub label{padding-left:16px;}
+  .nf-cal{border-bottom:3px solid var(--ink); padding:5px 0;}
+  .nf-cal label{font-weight:800; font-size:18px;}
+  .nf-rule-b{border-bottom:6px solid var(--ink);}
+  .nf-in{width:76px; padding:3px 6px; font-size:14px; text-align:right;}
+  .nf-in.nf-sm{width:58px;}
+  .nf-cal .nf-in{width:90px; font-size:16px; font-weight:700;}
+  .nf-per100{font-size:12.5px; color:var(--ink-soft); margin:8px 0 10px; min-height:1em;}
+  .nf-measures{margin:0 0 12px;}
+  .nf-measures summary{cursor:pointer; font-size:13px; color:var(--ink-soft);}
+  .nf-actions [hidden]{display:none;}
+  .nf-row i{font-style:normal; width:22px; text-align:left;}
+  .nf-actions{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;}
+  .lk-list{display:flex; flex-direction:column; gap:6px; margin-top:6px;}
+  .lk-item{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 10px; border:1px solid var(--border); border-radius:3px; font-size:13px; background:var(--card);}
+  .lk-item small{display:block; color:var(--ink-soft);}
+  .db-row{display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px dashed var(--border); font-size:13px;}
+  .db-row .db-acts{display:flex; gap:6px; flex-shrink:0;}
+  .db-tag{font-size:11px; font-weight:700; color:var(--gold);}
   legend{padding:0 8px; font-size:10.5px; letter-spacing:.16em; text-transform:uppercase; font-weight:600; color:var(--gold);}
   .form-actions{display:flex; justify-content:flex-end; gap:10px; margin-top:10px;}
   .source-row{display:flex; gap:8px; align-items:center;}
@@ -384,6 +439,7 @@
   .ing-status .dot{display:inline-block; width:6px; height:6px; border-radius:50%; margin-right:6px; vertical-align:1px; background:var(--sage);}
   .ing-status.warn .dot{background:var(--rust);}
   .ing-status.warn{color:var(--rust);}
+  .ing-row select.ing-unit.bad{border-color:var(--rust); box-shadow:0 0 0 2px color-mix(in srgb, var(--rust) 25%, transparent); color:var(--rust);}
   .ing-status b{color:var(--ink); font-weight:600;}
   .ing-status a{color:var(--gold); text-decoration:underline; text-underline-offset:2px; cursor:pointer;}
   .ing-del{width:30px; height:38px; border:none; background:transparent; color:var(--ink-soft); font-size:18px; cursor:pointer; border-radius:2px; line-height:1;}
@@ -624,7 +680,7 @@
 </header>
 
 <!-- Toolbar (right side, stays in place) -->
-<div class="gf-frame" aria-hidden="true"></div>
+<div class="gf-wash" aria-hidden="true"></div><div class="gf-frame" aria-hidden="true"></div>
 <nav class="rail no-print" id="rail" aria-label="Tools">
   <button class="rail-btn" id="themeBtn" data-tip="Light / dark" aria-label="Switch light or dark theme"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></svg></button>
   <button class="rail-btn" id="cartBtn" data-tip="Shopping list" aria-label="Shopping list"><svg class="i" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8h14l-1.4 11a1.5 1.5 0 0 1-1.5 1.3H7.9A1.5 1.5 0 0 1 6.4 19z"/><path d="M9 8V6.5a3 3 0 0 1 6 0V8"/></svg><span class="badge" id="cartCount" data-n="0"></span></button>
@@ -975,43 +1031,58 @@
         Custom entries are saved in your local recipe database and used automatically from now on.
       </p>
 
-      <fieldset>
-        <legend>Add an ingredient by hand</legend>
+      <fieldset id="dbFormSet">
+        <legend id="dbFormTitle">Add an ingredient</legend>
         <div class="field">
-          <label>Ingredient name</label>
+          <label for="db-name">Ingredient name</label>
           <input type="text" id="db-name" placeholder="e.g. gochujang">
         </div>
-        <p class="hint" style="margin:-4px 0 12px;">All values are per 100g of this ingredient.</p>
-        <div class="row3">
-          <div class="field"><label>Calories</label><input type="number" id="db-kcal" step="any"></div>
-          <div class="field"><label>Protein (g)</label><input type="number" id="db-p" step="any"></div>
-          <div class="field"><label>Carbs (g)</label><input type="number" id="db-c" step="any"></div>
+        <p class="hint" id="dbFormHint" style="margin:-4px 0 12px;">Copy the numbers from the package's Nutrition Facts table, for the serving size it shows. The app works out the rest.</p>
+        <div class="nf-form">
+          <div class="nf-head">Nutrition Facts</div>
+          <div class="nf-serv">
+            <span>Per</span>
+            <input id="db-sq" class="nf-in nf-sm" inputmode="decimal" placeholder="2/3" aria-label="Serving amount">
+            <select id="db-su" aria-label="Serving measure"><option value="">—</option><option value="cup">cup</option><option value="tbsp">tbsp</option><option value="tsp">tsp</option><option value="unit">item</option></select>
+            <span>(</span><input id="db-sg" class="nf-in nf-sm" type="number" step="any" min="0" placeholder="55" aria-label="Serving weight in grams"><span>g )</span>
+          </div>
+          <div class="nf-row nf-cal"><label for="db-kcal">Calories</label><input id="db-kcal" class="nf-in" type="number" step="any" min="0"></div>
+          <div class="nf-row nf-rule"><label for="db-f"><b>Fat</b></label><span><input id="db-f" class="nf-in" type="number" step="any" min="0"><i>g</i></span></div>
+          <div class="nf-row nf-sub"><label for="db-sf">Saturated</label><span><input id="db-sf" class="nf-in" type="number" step="any" min="0"><i>g</i></span></div>
+          <div class="nf-row"><label for="db-c"><b>Carbohydrate</b></label><span><input id="db-c" class="nf-in" type="number" step="any" min="0"><i>g</i></span></div>
+          <div class="nf-row nf-sub"><label for="db-fib">Fibre</label><span><input id="db-fib" class="nf-in" type="number" step="any" min="0"><i>g</i></span></div>
+          <div class="nf-row nf-sub"><label for="db-sug">Sugars</label><span><input id="db-sug" class="nf-in" type="number" step="any" min="0"><i>g</i></span></div>
+          <div class="nf-row"><label for="db-p"><b>Protein</b></label><span><input id="db-p" class="nf-in" type="number" step="any" min="0"><i>g</i></span></div>
+          <div class="nf-row"><label for="db-chol"><b>Cholesterol</b></label><span><input id="db-chol" class="nf-in" type="number" step="any" min="0"><i>mg</i></span></div>
+          <div class="nf-row nf-rule-b"><label for="db-na"><b>Sodium</b></label><span><input id="db-na" class="nf-in" type="number" step="any" min="0"><i>mg</i></span></div>
+          <div class="nf-row"><label for="db-k">Potassium</label><span><input id="db-k" class="nf-in" type="number" step="any" min="0"><i>mg</i></span></div>
+          <div class="nf-row"><label for="db-ca">Calcium</label><span><input id="db-ca" class="nf-in" type="number" step="any" min="0"><i>mg</i></span></div>
+          <div class="nf-row"><label for="db-fe">Iron</label><span><input id="db-fe" class="nf-in" type="number" step="any" min="0"><i>mg</i></span></div>
         </div>
-        <div class="row3">
-          <div class="field"><label>Fat (g)</label><input type="number" id="db-f" step="any"></div>
-          <div class="field"><label>Fiber (g)</label><input type="number" id="db-fib" step="any"></div>
-          <div class="field"><label>Sugar (g)</label><input type="number" id="db-sug" step="any"></div>
+        <p class="nf-per100" id="dbPer100"></p>
+        <details class="nf-measures" id="dbMeasures">
+          <summary>Measures for recipes <span id="dbMeasureSummary"></span></summary>
+          <p class="hint" style="margin:6px 0 10px;">Filled in from the serving size when it's a cup, spoon or item. Change them if you know better. One spoon or cup weight is enough; the others are worked out.</p>
+          <div class="row3">
+            <div class="field"><label for="db-cup">Grams per cup</label><input type="number" id="db-cup" step="any" min="0"></div>
+            <div class="field"><label for="db-tbsp">Grams per tbsp</label><input type="number" id="db-tbsp" step="any" min="0"></div>
+            <div class="field"><label for="db-tsp">Grams per tsp</label><input type="number" id="db-tsp" step="any" min="0"></div>
+          </div>
+          <div class="row3">
+            <div class="field"><label for="db-unit">Grams per item</label><input type="number" id="db-unit" step="any" min="0"></div>
+            <div></div><div></div>
+          </div>
+        </details>
+        <div class="nf-actions">
+          <button type="button" class="btn btn-primary btn-sm" id="db-add-btn">Save to database</button>
+          <button type="button" class="btn btn-outline btn-sm" id="db-cancel-btn" hidden>Cancel</button>
+          <button type="button" class="btn btn-danger btn-sm" id="db-reset-btn" hidden>Reset to USDA</button>
         </div>
-        <div class="row3">
-          <div class="field"><label>Sat fat (g) <span style="text-transform:none;">(optional)</span></label><input type="number" id="db-sf" step="any"></div>
-          <div class="field"><label>Cholesterol (mg) <span style="text-transform:none;">(optional)</span></label><input type="number" id="db-chol" step="any"></div>
-        </div>
-        <div class="row3">
-          <div class="field"><label>Sodium (mg)</label><input type="number" id="db-na" step="any"></div>
-          <div class="field"><label>Grams per cup <span style="text-transform:none;">(optional)</span></label><input type="number" id="db-cup" step="any"></div>
-          <div class="field"><label>Grams per whole item <span style="text-transform:none;">(optional, e.g. 1 egg)</span></label><input type="number" id="db-unit" step="any"></div>
-        </div>
-        <div class="row3">
-          <div class="field"><label>Grams per tbsp <span style="text-transform:none;">(optional)</span></label><input type="number" id="db-tbsp" step="any"></div>
-          <div class="field"><label>Grams per tsp <span style="text-transform:none;">(optional)</span></label><input type="number" id="db-tsp" step="any"></div>
-          <div></div>
-        </div>
-        <button type="button" class="btn btn-primary btn-sm" id="db-add-btn">+ Add to database</button>
       </fieldset>
 
       <fieldset>
         <legend>Look up an ingredient online</legend>
-        <p class="hint" style="margin-top:0;">Pulls per-100g nutrition from the USDA FoodData Central public database and saves it locally.</p>
+        <p class="hint" style="margin-top:0;">Searches USDA FoodData Central. Pick the closest match, check it in the form above, then save.</p>
         <div class="source-row" style="margin-bottom:10px;">
           <input type="text" id="db-lookup-name" placeholder="e.g. jackfruit">
           <button type="button" class="btn btn-outline btn-sm" id="db-lookup-btn">Look up</button>
@@ -1026,12 +1097,12 @@
       <fieldset>
         <legend>Your custom ingredients (<span id="customCount">0</span>)</legend>
         <div id="customList"></div>
-        <p class="hint" id="customEmptyMsg">None yet — additions above will show up here.</p>
+        <p class="hint" id="customEmptyMsg">None yet. Ingredients you add or look up show up here.</p>
       </fieldset>
 
       <fieldset>
         <legend>Browse built-in ingredients (<span id="builtinListCount">0</span>)</legend>
-        <p class="hint" style="margin-top:0;">Every ingredient recipes are automatically matched against, with its nutrition per 100g. Click one to load it into the form above, tweak it, and save your own version — your version will be used instead from then on.</p>
+        <p class="hint" style="margin-top:0;">Every ingredient recipes are matched against, per 100 g. Edit any of them; your version is used from then on, and “Reset to USDA” brings the original back.</p>
         <div class="field" style="margin-bottom:10px;">
           <input type="text" id="builtin-search" placeholder="Search built-in ingredients…">
         </div>
@@ -1809,20 +1880,26 @@ function matchDbEntryRaw(name){
   return best;
 }
 
+/* Volume weights: any one of cup / tbsp / tsp fills in the others (1 cup = 16 tbsp = 48 tsp). */
+function volWeights(db){
+  const cup = db.cup || (db.tbsp ? db.tbsp*16 : db.tsp ? db.tsp*48 : 0);
+  return { cup, tbsp: db.tbsp || cup/16, tsp: db.tsp || (db.tbsp ? db.tbsp/3 : cup/48) };
+}
 function gramsFor(parsed, dbKey){
   const db = effectiveDb()[dbKey];
   if(!db || parsed.amount == null) return null;
   const amt = parsed.amount;
+  const v = volWeights(db);
   switch(parsed.unit){
-    case 'cup': return db.cup ? amt*db.cup : null;
-    case 'tbsp': return db.tbsp ? amt*db.tbsp : null;
-    case 'tsp': return db.tsp ? amt*db.tsp : null;
+    case 'cup': return v.cup ? amt*v.cup : null;
+    case 'tbsp': return v.tbsp ? amt*v.tbsp : null;
+    case 'tsp': return v.tsp ? amt*v.tsp : null;
     case 'oz': return amt*28.3495;
     case 'lb': return amt*453.592;
     case 'g': return amt;
     case 'kg': return amt*1000;
-    case 'ml': return db.cup ? amt*db.cup/236.6 : null;
-    case 'l': return db.cup ? amt*1000*db.cup/236.6 : null;
+    case 'ml': return v.cup ? amt*v.cup/236.6 : null;
+    case 'l': return v.cup ? amt*1000*v.cup/236.6 : null;
     case 'unit': return db.unit ? amt*db.unit : null;
     case 'pinch': return 0.36*amt;
     case null:
@@ -1834,6 +1911,19 @@ function gramsFor(parsed, dbKey){
    `text` is kept in sync so scaling, shopping list, search and diet scans keep working. Older recipes only have `text`. */
 const COUNT_UNITS = ['', 'clove', 'slice', 'piece', 'can', 'bunch', 'pinch'];
 const ING_UNITS = [['','count'],['g','g'],['kg','kg'],['oz','oz'],['lb','lb'],['cup','cup'],['tbsp','tbsp'],['tsp','tsp'],['ml','ml'],['l','L'],['clove','clove'],['slice','slice'],['piece','piece'],['can','can'],['bunch','bunch'],['pinch','pinch']];
+/* Units an ingredient can actually be weighed in. No database item yet: every unit. */
+function unitsFor(key){
+  const db = key && effectiveDb()[key];
+  if(!db) return ING_UNITS.map(u => u[0]);
+  const v = volWeights(db);
+  return ING_UNITS.map(u => u[0]).filter(u => {
+    if(['g','kg','oz','lb'].includes(u)) return true;
+    if(['cup','ml','l'].includes(u)) return !!v.cup;
+    if(u === 'tbsp' || u === 'tsp') return !!v[u];
+    if(u === 'pinch') return !!v.tsp;
+    return !!db.unit;                                   // count, clove, slice, piece, can, bunch
+  });
+}
 function calcUnit(u){
   if(!u || u === 'unit' || u === 'clove' || u === 'slice' || u === 'piece' || u === 'can' || u === 'bunch') return null;  // per-item weight
   if(u === 'pinch') return 'pinch';
@@ -2222,7 +2312,7 @@ function classify(recipe){
     if(TITLE_MEAL_BREAKFAST.test(lowTitle) || f.dish.has('Oats & pancakes')) f.meals.add('Breakfast');
     else if(TITLE_MEAL_SNACK.test(lowTitle)) f.meals.add('Snacks & sweets');
     else if(/\b(smoothie|shake)\b/.test(lowTitle)) f.meals.add('Smoothies');
-    else { f.meals.add('Lunch'); f.meals.add('Dinner'); }                    // a main course works for either
+    // otherwise no meal: an untagged recipe shows under All only, never a meal it wasn't given
   }
 
   // numbers
@@ -2509,7 +2599,13 @@ function paintGlutenFree(){
   btn.classList.toggle('on', gf);
   btn.setAttribute('aria-pressed', gf);
   btn.dataset.tip = gf ? 'Gluten-free mode: on' : 'Gluten-free mode';
-  document.body.classList.toggle('gf-mode', gf);
+  const body = document.body;
+  if(body.classList.contains('gf-mode') !== gf && window._gfPainted){        // fade colours only when switching
+    body.classList.add('gf-anim'); clearTimeout(window._gfAnimT);
+    window._gfAnimT = setTimeout(()=> body.classList.remove('gf-anim'), 3100);
+  }
+  window._gfPainted = true;
+  body.classList.toggle('gf-mode', gf);
   $('#gfBanner').hidden = !gf;
   if(gf){
     const hidden = ALL_RECIPES.filter(r => !classify(r).diet.includes('Gluten free')).length;
@@ -2796,9 +2892,13 @@ function formIngredients(){
     unit: r.unit || '', label: (r.label||'').trim(), note: (r.note||'').trim()
   }));
 }
-function unitOptions(sel){
-  return ING_UNITS.map(([v,t]) => `<option value="${v}"${v===sel?' selected':''}>${t}</option>`).join('');
+function unitOptions(sel, key){
+  const ok = unitsFor(key);
+  // a unit the item can't use (e.g. from an imported line) stays visible but disabled, so the row asks for a choice
+  const opts = ING_UNITS.filter(([v]) => ok.includes(v) || v === sel);
+  return opts.map(([v,t]) => `<option value="${v}"${v===sel?' selected':''}${ok.includes(v)?'':' disabled'}>${t}</option>`).join('');
 }
+function unitUsable(r){ return !r.item || unitsFor(r.item).includes(r.unit||''); }
 function ingStatusHtml(r){
   if(!r || (!(r.label||'').trim() && !r.item)) return '';
   if(r.qty != null && isNaN(r.qty)) return {warn:true, html:`<span class="dot"></span>Amount should be a number like 2, 1.5 or 1 1/2.`};
@@ -2808,18 +2908,14 @@ function ingStatusHtml(r){
   const name = `<b>${escapeHtml(displayName(r.item))}</b>`;
   const auto = r.auto ? ' · matched automatically, change it if wrong' : '';
   if(res.why === 'noqty') return {warn:false, html:`<span class="dot" style="background:var(--gold-line)"></span>${name} · no amount, so it isn't counted${auto}`};
-  if(res.why === 'nounit'){
-    const cu = calcUnit(r.unit);
-    const msg = cu == null ? `there's no per-item weight for this ingredient. Use g, oz or cups` : `there's no ${r.unit === 'l' ? 'L' : r.unit} weight for this ingredient. Use g, oz or count`;
-    return {warn:true, html:`<span class="dot"></span>${name} · ${msg}.`};
-  }
+  if(res.why === 'nounit' || !unitUsable(r)) return {warn:true, html:`<span class="dot"></span>${name} · choose a unit`};
   const kcal = Math.round(db.kcal * res.grams / 100);
   return {warn:false, html:`<span class="dot"></span>${name} · ${Math.round(res.grams)} g · ${kcal} kcal${auto}`};
 }
 function rowHtml(r, i){
   return `<div class="ing-row" data-i="${i}">
     <input class="ing-qty" inputmode="decimal" placeholder="Qty" value="${escapeHtml(r.qty != null && !isNaN(r.qty) ? fmtQty(r.qty) : (r.qtyRaw||''))}" aria-label="Amount">
-    <select class="ing-unit" aria-label="Unit">${unitOptions(r.unit||'')}</select>
+    <select class="ing-unit${unitUsable(r)?'':' bad'}" aria-label="Unit">${unitOptions(r.unit||'', r.item)}</select>
     <div class="ing-name-wrap"><input class="ing-name" placeholder="Search ingredients…" autocomplete="off" value="${escapeHtml(displayName(r.label||''))}" aria-label="Ingredient" role="combobox" aria-autocomplete="list" aria-expanded="false"><div class="ing-suggest" role="listbox"></div></div>
     <input class="ing-note" placeholder="Note (e.g. diced)" value="${escapeHtml(r.note||'')}" aria-label="Note">
     <button type="button" class="ing-del" title="Remove ingredient" aria-label="Remove ingredient">×</button>
@@ -2843,6 +2939,10 @@ function updateRowStatus(i){
   el.className = 'ing-status' + (st && st.warn ? ' warn' : '');
   el.innerHTML = st ? st.html : '';
   row.querySelector('.ing-name').classList.toggle('linked', !!formIngs[i].item);
+  const sel = row.querySelector('.ing-unit'), r = formIngs[i];
+  const want = unitOptions(r.unit||'', r.item);
+  if(sel.dataset.opts !== want){ sel.innerHTML = want; sel.dataset.opts = want; sel.value = r.unit||''; }
+  sel.classList.toggle('bad', !unitUsable(r));
 }
 function ingredientsChanged(){
   // Editing ingredients switches imported recipes from the source's fixed nutrition panel to live numbers.
@@ -2930,9 +3030,10 @@ ingRowsEl.addEventListener('click', e=>{
     e.preventDefault();
     window._dbReturnRow = i;
     openDbPanel();
-    $('#db-name').value = (formIngs[i].label||'').trim().toLowerCase();
+    const nm = (formIngs[i].label||'').trim().toLowerCase();
+    $('#db-name').value = nm; $('#db-lookup-name').value = nm;
     $('#db-name').scrollIntoView({block:'center'});
-    showToast('Fill in the nutrition per 100 g (or use the USDA lookup), then "Add to database"');
+    showToast('Copy it from the package label, or look it up on USDA below');
   }
 });
 ingRowsEl.addEventListener('keydown', e=>{
@@ -3318,9 +3419,9 @@ $('#detailBody').addEventListener('click', async e=>{
     }
     case 'lookup': {
       const nutri = computeNutrition(recipe);
-      openDbPanel(); showToast("Looking up "+nutri.unmatched.length+" ingredient(s)…");
-      for(const raw of nutri.unmatched){ await runLookup(parseIngredientLine(raw).name); }
-      renderDbPanel(); renderDetail(recipe); render(); break;
+      openDbPanel();
+      lookupMany(nutri.unmatched.map(raw => parseIngredientLine(raw).name));
+      break;
     }
     case 'delete': {
       const copy = recipe;
@@ -4123,163 +4224,309 @@ function openDbPanel(){
   $('#builtinCount').textContent = Object.keys(NUTRI_DB).length;
   $('#builtinListCount').textContent = Object.keys(NUTRI_DB).length;
   $('#builtin-search').value = '';
+  clearDbForm(); window._lookupQueue = [];
+  $('#lookupResult').innerHTML = ''; $('#db-lookup-name').value = '';
   renderDbPanel();
-  renderBuiltinList('');
   $('#dbOverlay').classList.add('show');
 }
-function closeDbPanel(){ $('#dbOverlay').classList.remove('show'); }
+function closeDbPanel(){
+  $('#dbOverlay').classList.remove('show');
+  if($('#detailOverlay').classList.contains('show') && currentDetailId){
+    const r = ALL_RECIPES.find(x => x.id === currentDetailId); if(r) renderDetail(r);
+  }
+}
 
+/* ---- list of your ingredients + built-ins (editable) ---- */
+function dbSummary(d){ return `${Math.round(d.kcal)} kcal · ${+(+d.p||0).toFixed(1)} g protein · ${+(+d.c||0).toFixed(1)} g carbs · ${+(+d.f||0).toFixed(1)} g fat /100 g`; }
 function renderDbPanel(){
   const names = Object.keys(CUSTOM_DB).sort();
   $('#customCount').textContent = names.length;
   $('#customEmptyMsg').style.display = names.length ? 'none' : 'block';
-  const list = $('#customList');
-  list.innerHTML = names.map(name=>{
-    const d = CUSTOM_DB[name];
-    return `<div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px dashed var(--border); font-size:13.5px;">
-      <span><strong>${escapeHtml(name)}</strong> — ${Math.round(d.kcal)} kcal, ${d.p.toFixed(1)}g protein /100g</span>
-      <button type="button" class="icon-btn" data-del="${escapeHtml(name)}" title="Remove">✕</button>
+  $('#customList').innerHTML = names.map(name=>{
+    const d = CUSTOM_DB[name], builtin = Object.prototype.hasOwnProperty.call(NUTRI_DB, name);
+    const tag = builtin ? 'edited built-in' : d.fdc ? 'from USDA' : 'yours';
+    return `<div class="db-row">
+      <span><strong>${escapeHtml(displayName(name))}</strong> <span class="db-tag">· ${tag}</span><br><span style="color:var(--ink-soft);">${dbSummary(d)}</span></span>
+      <span class="db-acts"><button type="button" class="btn btn-outline btn-sm" data-edit="${escapeHtml(name)}">Edit</button>
+      <button type="button" class="btn btn-danger btn-sm" data-del="${escapeHtml(name)}">${builtin ? 'Reset' : 'Remove'}</button></span>
     </div>`;
   }).join('');
-  list.querySelectorAll('[data-del]').forEach(btn=>{
-    btn.addEventListener('click', async ()=>{
-      await deleteCustomIngredient(btn.dataset.del);
-      renderDbPanel();
-      showToast("Removed from database");
-    });
-  });
   renderBuiltinList($('#builtin-search').value);
 }
-
-function loadIngredientIntoAddForm(name, d){
-  $('#db-name').value = name;
-  $('#db-kcal').value = d.kcal;
-  $('#db-p').value = d.p;
-  $('#db-c').value = d.c;
-  $('#db-f').value = d.f;
-  $('#db-fib').value = d.fib;
-  $('#db-sug').value = d.sug;
-  $('#db-na').value = d.na;
-  const _ex = extraFor(name, d);
-  $('#db-sf').value = d.sf != null ? d.sf : '';
-  $('#db-chol').value = d.chol != null ? d.chol : '';
-  if(d.sf == null && NUTRI_EXTRA[name]){ $('#db-sf').value = _ex[0]; $('#db-chol').value = _ex[1]; }
-  $('#db-cup').value = d.cup || '';
-  $('#db-tbsp').value = d.tbsp || '';
-  $('#db-tsp').value = d.tsp || '';
-  $('#db-unit').value = d.unit || '';
-  $('#db-name').scrollIntoView({behavior:'smooth', block:'center'});
-  $('#db-name').focus();
-  showToast(`Loaded "${name}" — edit and click "Add to database" to save your own version`);
-}
-
 function renderBuiltinList(filter){
   const q = (filter||'').trim().toLowerCase();
   const names = Object.keys(NUTRI_DB).filter(n=>n.includes(q)).sort();
-  const box = $('#builtinList');
   $('#builtinEmptyMsg').style.display = names.length ? 'none' : 'block';
-  box.innerHTML = names.map(name=>{
-    const d = NUTRI_DB[name];
-    const overridden = Object.prototype.hasOwnProperty.call(CUSTOM_DB, name);
-    return `<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px dashed var(--border); font-size:13px;">
-      <span>
-        <strong>${escapeHtml(name)}</strong>${overridden ? ' <span style="color:var(--mustard); font-size:11px; font-weight:700;">· overridden</span>' : ''}<br>
-        <span style="color:var(--ink-soft);">${Math.round(d.kcal)} kcal · ${d.p}g protein · ${d.c}g carbs · ${d.f}g fat /100g</span><br>
-        <span style="color:var(--ink-soft); font-size:11px;">${NUTRI_SOURCE[name] && NUTRI_SOURCE[name] !== 'est' ? 'USDA SR Legacy #' + NUTRI_SOURCE[name] : 'Typical label values (not in USDA data)'}</span>
-      </span>
-      <button type="button" class="btn btn-outline btn-sm" data-use="${escapeHtml(name)}" style="flex-shrink:0;">Use</button>
+  $('#builtinList').innerHTML = names.map(name=>{
+    const mine = Object.prototype.hasOwnProperty.call(CUSTOM_DB, name);
+    const d = mine ? CUSTOM_DB[name] : NUTRI_DB[name];
+    const src = NUTRI_SOURCE[name] && NUTRI_SOURCE[name] !== 'est' ? 'USDA SR Legacy #' + NUTRI_SOURCE[name] : 'Typical label values (not in USDA data)';
+    return `<div class="db-row">
+      <span><strong>${escapeHtml(name)}</strong>${mine ? ' <span class="db-tag">· your version</span>' : ''}<br>
+        <span style="color:var(--ink-soft);">${dbSummary(d)}</span><br>
+        <span style="color:var(--ink-soft); font-size:11px;">${src}</span></span>
+      <span class="db-acts"><button type="button" class="btn btn-outline btn-sm" data-edit="${escapeHtml(name)}">Edit</button>
+      ${mine ? `<button type="button" class="btn btn-danger btn-sm" data-del="${escapeHtml(name)}">Reset</button>` : ''}</span>
     </div>`;
   }).join('');
-  box.querySelectorAll('[data-use]').forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      const name = btn.dataset.use;
-      loadIngredientIntoAddForm(name, NUTRI_DB[name]);
-    });
+}
+async function removeOrReset(name){
+  const builtin = Object.prototype.hasOwnProperty.call(NUTRI_DB, name);
+  await deleteCustomIngredient(name);
+  if(dbEditing === name) clearDbForm();
+  renderDbPanel(); render();
+  if(window.onCustomDbChanged) window.onCustomDbChanged();
+  showToast(builtin ? `"${name}" is back to the USDA values` : `Removed "${name}"`);
+}
+['#customList','#builtinList'].forEach(sel => $(sel).addEventListener('click', e=>{
+  const ed = e.target.closest('[data-edit]'); if(ed){ editIngredient(ed.dataset.edit); return; }
+  const del = e.target.closest('[data-del]'); if(del) removeOrReset(del.dataset.del);
+}));
+$('#builtin-search').addEventListener('input', (e)=> renderBuiltinList(e.target.value));
+
+/* ---- Nutrition Facts form: values as printed for a serving, stored per 100 g ---- */
+const NF_FIELDS = ['kcal','f','sf','c','fib','sug','p','chol','na','k','ca','fe'];
+const NF_MICRO = ['k','ca','fe'];
+const MEASURE_FIELDS = ['cup','tbsp','tsp','unit'];
+let dbEditing = null;         // name of the entry being edited, or null when adding
+let dbPendingMicro = null;    // vitamins/minerals from a USDA pick or the entry being edited (beyond K, Ca, Fe)
+let dbPendingFdc = null;
+function nfVal(id){ const v = $('#db-'+id).value.trim(); if(v === '') return null; const n = parseFloat(v); return isNaN(n) || n < 0 ? null : n; }
+function nfServing(){ const g = parseFloat($('#db-sg').value); return g > 0 ? g : null; }
+function nfPer100(){
+  const g = nfServing(); if(!g) return null;
+  const k = 100/g, out = {};
+  NF_FIELDS.forEach(f => { const v = nfVal(f); out[f] = v == null ? null : +(v*k).toFixed(f==='kcal'||f==='na'||f==='chol'||f==='k'||f==='ca' ? 1 : 3); });
+  return out;
+}
+function nfMeasureFromServing(){
+  const q = parseQty($('#db-sq').value), u = $('#db-su').value, g = nfServing();
+  return (q && u && g) ? {unit:u, grams:+(g/q).toFixed(2)} : null;
+}
+function updateNfPreview(){
+  const per = nfPer100(), out = $('#dbPer100');
+  if(!per){ out.textContent = 'Enter the serving weight in grams to save.'; }
+  else if(nfServing() === 100) out.textContent = '';
+  else {
+    const f = (v,u) => v == null ? '–' : `${+v.toFixed(1)}${u}`;
+    out.textContent = `Per 100 g: ${f(per.kcal,' kcal')} · fat ${f(per.f,' g')} · carbs ${f(per.c,' g')} · protein ${f(per.p,' g')} · sodium ${f(per.na,' mg')}`;
+  }
+  // a cup / spoon / item serving fills that measure unless the user typed their own
+  const m = nfMeasureFromServing();
+  if(m){ const el = $('#db-'+m.unit); if(!el.dataset.typed) el.value = m.grams; }
+  const have = MEASURE_FIELDS.filter(u => parseFloat($('#db-'+u).value) > 0);
+  $('#dbMeasureSummary').textContent = have.length ? '· ' + have.map(u => u==='unit' ? 'item' : u).join(', ') : '· grams only';
+}
+$('#dbFormSet').addEventListener('input', e=>{
+  if(MEASURE_FIELDS.some(u => e.target.id === 'db-'+u)) e.target.dataset.typed = e.target.value ? '1' : '';
+  updateNfPreview();
+});
+$('#dbFormSet').addEventListener('change', updateNfPreview);
+function clearDbForm(){
+  dbEditing = null; dbPendingMicro = null; dbPendingFdc = null;
+  ['name','sq','sg',...NF_FIELDS,...MEASURE_FIELDS].forEach(f => { const el = $('#db-'+f); el.value = ''; delete el.dataset.typed; });
+  $('#db-su').value = '';
+  $('#db-name').readOnly = false;
+  $('#dbFormTitle').textContent = 'Add an ingredient';
+  $('#db-add-btn').textContent = 'Save to database';
+  $('#db-cancel-btn').hidden = true; $('#db-reset-btn').hidden = true;
+  $('#dbMeasures').open = false;
+  updateNfPreview();
+}
+/* Fill the form from a per-100 g entry. A saved label (what was typed) is shown as typed. */
+function fillDbForm(name, d, opts){
+  opts = opts || {};
+  clearDbForm();
+  $('#db-name').value = name;
+  const lab = d.label;
+  if(lab && lab.g){
+    $('#db-sq').value = lab.q || ''; $('#db-su').value = lab.u || ''; $('#db-sg').value = lab.g;
+    NF_FIELDS.forEach(f => { $('#db-'+f).value = lab.v && lab.v[f] != null ? lab.v[f] : ''; });
+  } else {
+    $('#db-sg').value = 100;
+    const ex = extraFor(name, d), micro = (d.micro || microFor(name) || {});
+    const vals = {kcal:d.kcal, f:d.f, sf: d.sf != null ? d.sf : (NUTRI_EXTRA[name] ? ex[0] : null), c:d.c, fib:d.fib, sug:d.sug, p:d.p,
+      chol: d.chol != null ? d.chol : (NUTRI_EXTRA[name] ? ex[1] : null), na:d.na, k:micro.k, ca:micro.ca, fe:micro.fe};
+    NF_FIELDS.forEach(f => { const v = vals[f]; $('#db-'+f).value = v == null ? '' : +(+v).toFixed(2); });
+  }
+  MEASURE_FIELDS.forEach(u => { const el = $('#db-'+u); el.value = d[u] || ''; if(d[u]) el.dataset.typed = '1'; });
+  // keep every vitamin/mineral the entry already has (the form only shows K, Ca, Fe)
+  const allMicro = d.micro || (Object.prototype.hasOwnProperty.call(NUTRI_DB, name) && !CUSTOM_DB[name] ? microFor(name) : null);
+  dbPendingMicro = allMicro ? Object.assign({}, allMicro) : null;
+  dbPendingFdc = d.fdc || null;
+  if(opts.edit){
+    dbEditing = name;
+    $('#db-name').readOnly = true;
+    const builtin = Object.prototype.hasOwnProperty.call(NUTRI_DB, name);
+    $('#dbFormTitle').textContent = 'Editing ' + displayName(name);
+    $('#db-add-btn').textContent = 'Save changes';
+    $('#db-cancel-btn').hidden = false;
+    $('#db-reset-btn').hidden = !(builtin && Object.prototype.hasOwnProperty.call(CUSTOM_DB, name));
+  } else $('#db-cancel-btn').hidden = false;
+  updateNfPreview();
+  $('#dbFormSet').scrollIntoView({behavior:'smooth', block:'start'});
+}
+function editIngredient(name){
+  const d = CUSTOM_DB[name] || NUTRI_DB[name]; if(!d) return;
+  fillDbForm(name, d, {edit:true});
+  $('#db-kcal').focus({preventScroll:true});
+}
+$('#db-cancel-btn').addEventListener('click', clearDbForm);
+$('#db-reset-btn').addEventListener('click', ()=>{ if(dbEditing) removeOrReset(dbEditing); });
+
+$('#db-add-btn').addEventListener('click', async ()=>{
+  const name = $('#db-name').value.trim().toLowerCase();
+  if(!name){ showToast("Enter an ingredient name"); $('#db-name').focus(); return; }
+  const per = nfPer100();
+  if(!per){ showToast("Enter the serving weight in grams"); $('#db-sg').focus(); return; }
+  if(per.kcal == null){ showToast("Enter the calories"); $('#db-kcal').focus(); return; }
+  if(!dbEditing && Object.prototype.hasOwnProperty.call(CUSTOM_DB, name) && !confirm(`You already have "${name}". Replace it?`)) return;
+  const z = v => v == null ? 0 : v;
+  const data = { kcal:per.kcal, p:z(per.p), c:z(per.c), f:z(per.f), fib:z(per.fib), sug:z(per.sug), na:z(per.na), sf:per.sf, chol:per.chol };
+  MEASURE_FIELDS.forEach(u => { const v = parseFloat($('#db-'+u).value); data[u] = v > 0 ? v : 0; });
+  const micro = Object.assign({}, dbPendingMicro || {});
+  NF_MICRO.forEach(c => { micro[c] = per[c]; });               // blank = not on the label = unknown (null), never 0
+  if(Object.values(micro).some(v => v != null)) data.micro = micro;
+  data.label = { q: $('#db-sq').value.trim(), u: $('#db-su').value, g: nfServing(),
+                 v: Object.fromEntries(NF_FIELDS.map(f => [f, nfVal(f)])) };
+  if(dbPendingFdc) data.fdc = dbPendingFdc;
+  const ok = await saveCustomIngredient(name, data);
+  if(!ok){ showToast("Couldn't save ingredient"); return; }
+  const was = dbEditing;
+  clearDbForm(); renderDbPanel(); render();
+  showToast(was ? `Saved changes to "${name}"` : `Added "${name}" to your database`);
+  if(window.onCustomDbChanged) window.onCustomDbChanged();
+  nextQueuedLookup();
+});
+
+/* ---- USDA FoodData Central lookup: show matches, the chosen one goes into the form to check ---- */
+const LK_CACHE = {};
+function fdcKey(){ return $('#db-api-key').value.trim() || 'DEMO_KEY'; }
+/* Energy appears twice per food (kcal and kJ). Take kcal; fall back to Atwater kcal, then kJ ÷ 4.184. */
+function fdcEnergy(list){
+  const pick = (num, unit) => list.find(n => String(n.nutrientNumber||n.number||'') === num && (!unit || String(n.unitName||'').toUpperCase() === unit));
+  const e = pick('208','KCAL') || pick('958','KCAL') || pick('957','KCAL');
+  if(e && e.value != null) return e.value;
+  const kj = pick('268') || list.find(n => /energy/i.test(n.nutrientName||'') && /kj/i.test(n.unitName||''));
+  return kj && kj.value != null ? +(kj.value/4.184).toFixed(1) : null;
+}
+function fdcToEntry(food){
+  const list = food.foodNutrients || [];
+  const by = {}; list.forEach(n => { if(!/^energy/i.test(n.nutrientName||'')) by[n.nutrientName] = n.value; });
+  const val = k => by[k] != null ? by[k] : null;
+  const F = {k:'Potassium, K', ca:'Calcium, Ca', fe:'Iron, Fe', vd:'Vitamin D (D2 + D3)', va:'Vitamin A, RAE',
+    vc:'Vitamin C, total ascorbic acid', ve:'Vitamin E (alpha-tocopherol)', vk:'Vitamin K (phylloquinone)', b1:'Thiamin',
+    b2:'Riboflavin', b3:'Niacin', b6:'Vitamin B-6', fol:'Folate, DFE', b12:'Vitamin B-12', chl:'Choline, total',
+    mg:'Magnesium, Mg', ph:'Phosphorus, P', zn:'Zinc, Zn', se:'Selenium, Se', cu:'Copper, Cu', mn:'Manganese, Mn',
+    mufa:'Fatty acids, total monounsaturated', pufa:'Fatty acids, total polyunsaturated'};
+  const micro = {}; for(const c in F) micro[c] = val(F[c]);
+  return { kcal: fdcEnergy(list), p: val('Protein')||0, c: val('Carbohydrate, by difference')||0, f: val('Total lipid (fat)')||0,
+    fib: val('Fiber, total dietary')||0, sug: val('Sugars, total including NLEA') ?? val('Sugars, total') ?? 0, na: val('Sodium, Na')||0,
+    sf: val('Fatty acids, total saturated'), chol: val('Cholesterol'), micro, cup:0, tbsp:0, tsp:0, unit:0, fdc: food.fdcId };
+}
+/* Household measures (1 tsp = 2.4 g, 1 cup = 128 g, 1 medium = 118 g) from the food's detail record. */
+async function fdcPortions(fdcId){
+  try{
+    const res = await fetch(`https://api.nal.usda.gov/fdc/v1/food/${fdcId}?api_key=${encodeURIComponent(fdcKey())}`);
+    if(!res.ok) return {};
+    const food = await res.json();
+    const out = {};
+    for(const p of (food.foodPortions || [])){
+      const amt = +p.amount || 1, g = +p.gramWeight; if(!(g > 0)) continue;
+      const mu = p.measureUnit && p.measureUnit.name && p.measureUnit.name !== 'undetermined' ? p.measureUnit.name : '';
+      const desc = `${mu} ${p.modifier||''} ${p.portionDescription||''}`.toLowerCase();
+      const per = +(g/amt).toFixed(2);
+      if(/\bcups?\b/.test(desc)){ if(!out.cup) out.cup = per; }
+      else if(/\b(tbsp|tablespoons?)\b/.test(desc)){ if(!out.tbsp) out.tbsp = per; }
+      else if(/\b(tsp|teaspoons?)\b/.test(desc)){ if(!out.tsp) out.tsp = per; }
+      else if(/\b(oz|ounces?|lbs?|pounds?|g|grams?|ml|fl)\b/.test(desc)) continue;
+      else if(/\b(medium|each|whole|item|clove|slice|large|small|fruit|piece|egg|leaf|stalk|ear)\b/.test(desc)){ if(!out.unit || /medium/.test(desc)) out.unit = per; }
+    }
+    return out;
+  }catch(e){ return {}; }
+}
+async function searchUsda(queryName){
+  const box = $('#lookupResult');
+  box.innerHTML = `<p class="hint">Searching USDA FoodData Central for "${escapeHtml(queryName)}"…</p>`;
+  try{
+    const url = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${encodeURIComponent(fdcKey())}&query=${encodeURIComponent(queryName)}&dataType=Foundation,SR%20Legacy&pageSize=6`;
+    const res = await fetch(url);
+    if(!res.ok){
+      box.innerHTML = `<p class="hint">Lookup failed for "${escapeHtml(queryName)}" (${res.status}). ${res.status===429?'Rate limit reached. Try again shortly or add your own API key below.':'Try adding it by hand instead.'}</p>`;
+      return;
+    }
+    const foods = ((await res.json()).foods || []).filter(f => fdcEnergy(f.foodNutrients||[]) != null);
+    if(!foods.length){ box.innerHTML = `<p class="hint">No USDA match for "${escapeHtml(queryName)}". Add it by hand from its package label instead.</p>`; return; }
+    foods.forEach(f => LK_CACHE[f.fdcId] = f);
+    box.innerHTML = `<p class="hint" style="margin:0;">Matches for "<b>${escapeHtml(queryName)}</b>". Pick the closest:</p><div class="lk-list">` +
+      foods.map(f => `<div class="lk-item"><span>${escapeHtml(f.description)}<small>${Math.round(fdcEnergy(f.foodNutrients))} kcal per 100 g · ${escapeHtml(f.dataType||'')}</small></span>
+        <button type="button" class="btn btn-outline btn-sm" data-pick="${f.fdcId}" data-q="${escapeHtml(queryName)}">Use</button></div>`).join('') + `</div>`;
+  }catch(e){
+    console.error(e);
+    box.innerHTML = `<p class="hint">Couldn't reach USDA's database right now. Add "${escapeHtml(queryName)}" by hand instead.</p>`;
+  }
+}
+$('#lookupResult').addEventListener('click', async e=>{
+  const b = e.target.closest('[data-pick]'); if(!b) return;
+  const food = LK_CACHE[b.dataset.pick]; if(!food) return;
+  b.disabled = true; b.textContent = 'Loading…';
+  const entry = fdcToEntry(food);
+  Object.assign(entry, await fdcPortions(food.fdcId));
+  const name = b.dataset.q.toLowerCase();
+  const existing = CUSTOM_DB[name] || NUTRI_DB[name];
+  fillDbForm(name, entry);
+  if(existing){ dbEditing = null; $('#dbFormTitle').textContent = `Replace "${displayName(name)}" with USDA's ${food.description}`; }
+  else $('#dbFormTitle').textContent = `Add ${food.description}`;
+  $('#lookupResult').innerHTML = `<p class="hint">Loaded USDA's “${escapeHtml(food.description)}” into the form. Check it and save.</p>`;
+});
+$('#db-lookup-btn').addEventListener('click', ()=>{
+  const name = $('#db-lookup-name').value.trim();
+  if(!name){ showToast("Enter an ingredient to look up"); return; }
+  window._lookupQueue = [];
+  searchUsda(name);
+});
+$('#db-lookup-name').addEventListener('keydown', e=>{ if(e.key === 'Enter'){ e.preventDefault(); $('#db-lookup-btn').click(); } });
+/* "Look these up online" from a recipe: one ingredient at a time, each picked and checked. */
+function lookupMany(names){
+  window._lookupQueue = names.slice();
+  nextQueuedLookup();
+}
+function nextQueuedLookup(){
+  const q = window._lookupQueue; if(!q || !q.length) return;
+  const name = q.shift();
+  $('#db-lookup-name').value = name;
+  searchUsda(name).then(()=>{
+    if(q.length) $('#lookupResult').insertAdjacentHTML('beforeend', `<p class="hint" style="margin-top:6px;">${q.length} more to look up after this one.</p>`);
+    $('#db-lookup-name').scrollIntoView({behavior:'smooth', block:'center'});
   });
 }
 
-$('#builtin-search').addEventListener('input', (e)=> renderBuiltinList(e.target.value));
+/* One-time repair: lookups saved before 2.5.0 could store kJ as kcal (white pepper 1240 instead of 296).
+   If calories are about 4.184 × what protein, carbs and fat add up to, divide by 4.184.
+   Lookups also saved no spoon/cup/item weights: borrow them from the built-in entry of the same name. */
+async function repairCustomDb(){
+  const fixed = [];
+  for(const [name, d] of Object.entries(CUSTOM_DB)){
+    if(d.label) continue;                                    // typed in by hand: leave alone
+    let changed = false;
+    const atw = 4*(+d.p||0) + 4*(+d.c||0) + 9*(+d.f||0);
+    if(atw > 20 && d.kcal > 2.5*atw && Math.abs(d.kcal/4.184 - atw) < 0.3*atw + 15){
+      d.kcal = +(d.kcal/4.184).toFixed(1); changed = true; fixed.push(name);
+    }
+    const b = NUTRI_DB[name];
+    if(b && !MEASURE_FIELDS.some(u => d[u] > 0) && MEASURE_FIELDS.some(u => b[u] > 0)){
+      MEASURE_FIELDS.forEach(u => { d[u] = b[u] || 0; }); changed = true;
+    }
+    if(changed) await saveCustomIngredient(name, d);
+  }
+  if(fixed.length) setTimeout(()=> showToast(`Fixed calories for ${fixed.join(', ')} (an online lookup had saved kilojoules as calories)`), 600);
+  return fixed;
+}
 
 $('#dbManagerBtn').addEventListener('click', openDbPanel);
 $('#dbCloseBtn').addEventListener('click', closeDbPanel);
 $('#dbOverlay').addEventListener('click', (e)=>{ if(e.target.id==='dbOverlay') closeDbPanel(); });
 
-$('#db-add-btn').addEventListener('click', async ()=>{
-  const name = $('#db-name').value.trim().toLowerCase();
-  if(!name){ showToast("Enter an ingredient name"); return; }
-  const num = id => parseFloat($(id).value) || 0;
-  const data = {
-    kcal:num('#db-kcal'), p:num('#db-p'), c:num('#db-c'), f:num('#db-f'),
-    fib:num('#db-fib'), sug:num('#db-sug'), na:num('#db-na'),
-    sf: $('#db-sf').value === '' ? null : num('#db-sf'), chol: $('#db-chol').value === '' ? null : num('#db-chol'),
-    cup:num('#db-cup'), tbsp:num('#db-tbsp'), tsp:num('#db-tsp'), unit:num('#db-unit')
-  };
-  if(CUSTOM_DB[name] && CUSTOM_DB[name].micro) data.micro = CUSTOM_DB[name].micro;   // keep vitamins from an earlier USDA lookup
-  const ok = await saveCustomIngredient(name, data);
-  if(ok){
-    ['#db-name','#db-kcal','#db-p','#db-c','#db-f','#db-fib','#db-sug','#db-na','#db-sf','#db-chol','#db-cup','#db-tbsp','#db-tsp','#db-unit'].forEach(id=>$(id).value='');
-    renderDbPanel();
-    showToast(`Added "${name}" to your database`);
-    if(window.onCustomDbChanged) window.onCustomDbChanged();
-    render();
-  } else showToast("Couldn't save ingredient");
-});
-
-async function runLookup(queryName){
-  const apiKey = $('#db-api-key').value.trim() || 'DEMO_KEY';
-  const resultBox = $('#lookupResult');
-  try{
-    const url = `https://api.nal.usda.gov/fdc/v1/foods/search?api_key=${encodeURIComponent(apiKey)}&query=${encodeURIComponent(queryName)}&dataType=Foundation,SR%20Legacy&pageSize=1`;
-    const res = await fetch(url);
-    if(!res.ok){
-      if(resultBox) resultBox.innerHTML = `<p class="hint">Lookup failed for "${escapeHtml(queryName)}" (${res.status}). ${res.status===429?'Rate limit reached — try again shortly or add your own API key above.':'Try adding it by hand instead.'}</p>`;
-      return null;
-    }
-    const json = await res.json();
-    const food = json.foods && json.foods[0];
-    if(!food){
-      if(resultBox) resultBox.innerHTML = `<p class="hint">No USDA match for "${escapeHtml(queryName)}". Try adding it by hand instead.</p>`;
-      return null;
-    }
-    const nutMap = {};
-    (food.foodNutrients||[]).forEach(n=>{ nutMap[n.nutrientName] = n.value; });
-    const data = {
-      kcal: nutMap['Energy'] || 0,
-      p: nutMap['Protein'] || 0,
-      c: nutMap['Carbohydrate, by difference'] || 0,
-      f: nutMap['Total lipid (fat)'] || 0,
-      fib: nutMap['Fiber, total dietary'] || 0,
-      sug: nutMap['Sugars, total including NLEA'] || nutMap['Sugars, total'] || 0,
-      na: nutMap['Sodium, Na'] || 0,
-      sf: nutMap['Fatty acids, total saturated'] != null ? nutMap['Fatty acids, total saturated'] : null,
-      chol: nutMap['Cholesterol'] != null ? nutMap['Cholesterol'] : null,
-      micro: (()=>{ const F = {k:'Potassium, K', ca:'Calcium, Ca', fe:'Iron, Fe', vd:'Vitamin D (D2 + D3)', va:'Vitamin A, RAE',
-          vc:'Vitamin C, total ascorbic acid', ve:'Vitamin E (alpha-tocopherol)', vk:'Vitamin K (phylloquinone)', b1:'Thiamin',
-          b2:'Riboflavin', b3:'Niacin', b6:'Vitamin B-6', fol:'Folate, DFE', b12:'Vitamin B-12', chl:'Choline, total',
-          mg:'Magnesium, Mg', ph:'Phosphorus, P', zn:'Zinc, Zn', se:'Selenium, Se', cu:'Copper, Cu', mn:'Manganese, Mn',
-          mufa:'Fatty acids, total monounsaturated', pufa:'Fatty acids, total polyunsaturated'};
-        const o = {}; for(const c in F) o[c] = nutMap[F[c]] != null ? nutMap[F[c]] : null; return o; })(),
-      cup:0, tbsp:0, tsp:0, unit:0
-    };
-    const cleanName = queryName.toLowerCase();
-    await saveCustomIngredient(cleanName, data);
-    if(resultBox) resultBox.innerHTML = `<p class="hint">✓ Added "${escapeHtml(food.description)}" as "${escapeHtml(cleanName)}" — ${Math.round(data.kcal)} kcal/100g.</p>`;
-    return data;
-  }catch(e){
-    console.error(e);
-    if(resultBox) resultBox.innerHTML = `<p class="hint">Lookup couldn't reach USDA's database right now. Try adding "${escapeHtml(queryName)}" by hand instead.</p>`;
-    return null;
-  }
-}
-
-$('#db-lookup-btn').addEventListener('click', async ()=>{
-  const name = $('#db-lookup-name').value.trim();
-  if(!name){ showToast("Enter an ingredient to look up"); return; }
-  $('#lookupResult').innerHTML = `<p class="hint">Searching USDA FoodData Central…</p>`;
-  await runLookup(name);
-  renderDbPanel();
-  render();
-});
 
 
 /* ============================================================
@@ -4287,6 +4534,7 @@ $('#db-lookup-btn').addEventListener('click', async ()=>{
    ============================================================ */
 async function init(){
   CUSTOM_DB = await loadCustomIngredients();
+  await repairCustomDb();
   ALL_RECIPES = await loadAllRecipes();
   await loadShopping();
   render();

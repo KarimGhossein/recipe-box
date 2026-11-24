@@ -257,6 +257,86 @@ test('import panel: paste text gives a preview, then opens the editor', async ()
   await win.keyboard.press('Escape');
 });
 
+test('untagged recipes get no meal; tagged ones keep theirs', async () => {
+  const r = await win.evaluate(() => [
+    classify({title:'Beef Stew', servings:2, ingredients:[{text:'500 g stewing beef'}]}).meals,
+    classify({title:'Beef Stew', servings:2, tags:['Dinner'], ingredients:[{text:'500 g stewing beef'}]}).meals]);
+  assert.deepStrictEqual(r, [[], ['Dinner']]);
+});
+
+test('USDA lookup reads kcal, not kJ, and old kJ entries are repaired', async () => {
+  const r = await win.evaluate(async () => {
+    const list = [{nutrientNumber:'208', nutrientName:'Energy', unitName:'KCAL', value:296}, {nutrientNumber:'268', nutrientName:'Energy', unitName:'kJ', value:1240}];
+    const kjOnly = [{nutrientNumber:'268', nutrientName:'Energy', unitName:'kJ', value:1240}];
+    const entry = fdcToEntry({fdcId:1, foodNutrients: list.concat([{nutrientName:'Protein', value:10.4}])});
+    await saveCustomIngredient('zz pepper test', {kcal:1240, p:10.4, c:68.6, f:2.1, fib:26, sug:0, na:5, sf:null, chol:null, cup:0, tbsp:0, tsp:0, unit:0});
+    const fixed = await repairCustomDb();
+    const after = CUSTOM_DB['zz pepper test'].kcal;
+    await deleteCustomIngredient('zz pepper test');
+    return {a: fdcEnergy(list), b: fdcEnergy(list.slice().reverse()), kj: fdcEnergy(kjOnly), entry: entry.kcal, fixed, after};
+  });
+  assert.strictEqual(r.a, 296); assert.strictEqual(r.b, 296); assert.ok(Math.abs(r.kj - 296.4) < 0.2);
+  assert.strictEqual(r.entry, 296);
+  assert.deepStrictEqual(r.fixed, ['zz pepper test']); assert.ok(Math.abs(r.after - 296.4) < 0.2);
+});
+
+test('database: Nutrition Facts form converts a serving to per 100 g; built-ins can be edited and reset', async () => {
+  await win.evaluate(() => openDbPanel());
+  await win.fill('#db-name', 'zz granola');
+  await win.fill('#db-sq', '2/3'); await win.selectOption('#db-su', 'cup'); await win.fill('#db-sg', '55');
+  for (const [k, v] of [['kcal', 210], ['f', 7], ['c', 33], ['p', 5], ['na', 95], ['ca', 20]]) await win.fill('#db-' + k, String(v));
+  assert.strictEqual(await win.inputValue('#db-cup'), '82.5', 'cup weight from the serving');
+  await win.click('#db-add-btn');
+  let r = await win.evaluate(() => { const d = CUSTOM_DB['zz granola']; return {kcal: d.kcal, na: d.na, cup: d.cup, ca: d.micro.ca, fe: d.micro.fe}; });
+  assert.ok(Math.abs(r.kcal - 381.8) < 0.1); assert.ok(Math.abs(r.na - 172.7) < 0.1);
+  assert.strictEqual(r.cup, 82.5); assert.ok(Math.abs(r.ca - 36.4) < 0.1);
+  assert.strictEqual(r.fe, null, 'blank on the label = unknown, not 0');
+  // edit it again: shows the label as typed
+  await win.click('#customList [data-edit="zz granola"]');
+  assert.strictEqual(await win.inputValue('#db-sg'), '55'); assert.strictEqual(await win.inputValue('#db-kcal'), '210');
+  await win.click('#db-cancel-btn');
+  await win.click('#customList [data-del="zz granola"]');
+  // edit a built-in, keep its vitamins, then reset
+  await win.fill('#builtin-search', 'white rice');
+  await win.click('#builtinList [data-edit="white rice"]');
+  await win.fill('#db-kcal', '400'); await win.click('#db-add-btn');
+  r = await win.evaluate(() => [effectiveDb()['white rice'].kcal, CUSTOM_DB['white rice'].micro.b1]);
+  assert.strictEqual(r[0], 400); assert.ok(r[1] > 0, 'other vitamins kept');
+  await win.click('#customList [data-del="white rice"]');
+  assert.strictEqual(await win.evaluate(() => effectiveDb()['white rice'].kcal), 365);
+  await win.evaluate(() => closeDbPanel());
+});
+
+test('ingredient units: only units the ingredient can be weighed in', async () => {
+  const r = await win.evaluate(() => {
+    const st = ingStatusHtml({qty: 2, unit: '', label: 'White pepper', item: 'white pepper'});
+    return { pepper: unitsFor('white pepper'), egg: unitsFor('egg'), any: unitsFor(null).length,
+      opts: unitOptions('', 'white pepper'), status: st.html,
+      tbspFromTsp: (() => { CUSTOM_DB['zz spice'] = {kcal: 300, p: 0, c: 0, f: 0, tsp: 2.4};
+        const g = [gramsFor({amount: 1, unit: 'tbsp'}, 'zz spice'), gramsFor({amount: 1, unit: 'cup'}, 'zz spice')]; delete CUSTOM_DB['zz spice']; return g; })() };
+  });
+  assert.ok(!r.pepper.includes('') && !r.pepper.includes('clove'), 'no count for a spice');
+  assert.ok(r.pepper.includes('tsp') && r.pepper.includes('tbsp') && r.pepper.includes('g'));
+  assert.ok(r.egg.includes(''), 'eggs can be counted');
+  assert.strictEqual(r.any, 16, 'no item yet: every unit');
+  assert.match(r.opts, /value="" selected disabled/, 'an unusable unit stays visible but disabled');
+  assert.match(r.status, /choose a unit/); assert.doesNotMatch(r.status, /instead|Use g/);
+  assert.ok(Math.abs(r.tbspFromTsp[0] - 7.2) < 0.01 && Math.abs(r.tbspFromTsp[1] - 115.2) < 0.01, 'tbsp and cup worked out from tsp');
+});
+
+test('gluten-free mode: palette changes and fades over 3 s', async () => {
+  const before = await win.evaluate(() => getComputedStyle(document.body).getPropertyValue('--primary').trim());
+  await win.click('#gfToggle');
+  const mid = await win.evaluate(() => ({anim: document.body.classList.contains('gf-anim'), dur: getComputedStyle(document.body).transitionDuration}));
+  assert.ok(mid.anim); assert.match(mid.dur, /^3s/);
+  await win.waitForTimeout(3300);
+  const after = await win.evaluate(() => ({p: getComputedStyle(document.body).getPropertyValue('--primary').trim(), anim: document.body.classList.contains('gf-anim'),
+    frame: getComputedStyle(document.querySelector('.gf-frame')).opacity}));
+  assert.notStrictEqual(after.p, before); assert.ok(!after.anim); assert.strictEqual(after.frame, '1');
+  await win.click('#gfToggle');
+  await win.waitForTimeout(3300);
+});
+
 test('data survives a restart', async () => {
   await quit();
   await launch();
